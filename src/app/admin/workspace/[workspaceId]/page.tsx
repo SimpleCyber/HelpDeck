@@ -3,7 +3,7 @@
 import { useAuth } from "@/lib/auth-context";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ChevronLeft, Save, Palette, Code, Loader2 } from "lucide-react";
+import { ChevronLeft, Save, Palette, Code, Loader2, Trash2 } from "lucide-react";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
@@ -12,13 +12,14 @@ import { Input } from "@/components/ui/Input";
 import { LogoUpload } from "@/components/admin/LogoUpload";
 import { DesignPreview } from "@/components/admin/DesignPreview";
 import { InstallationGuide } from "@/components/admin/InstallationGuide";
+import { DeleteWorkspace } from "@/components/admin/DeleteWorkspace";
 
 export default function WorkspaceSettings() {
   const { user, loading: authL } = useAuth();
   const router = useRouter();
   const { workspaceId } = useParams() as { workspaceId: string };
   const [ws, setWs] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState("design");
+  const [tab, setTab] = useState("design");
   const [formData, setFormData] = useState({ name: "", color: "#3b82f6", logo: "" });
   const [saving, setSaving] = useState(false);
 
@@ -51,24 +52,23 @@ export default function WorkspaceSettings() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="h-16 bg-white border-b px-8 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-4"><Button variant="ghost" icon={ChevronLeft} onClick={() => router.push("/admin/dashboard")} /><h2 className="text-lg font-bold">{ws.name} / Settings</h2></div>
-          <Button icon={Save} loading={saving} onClick={handleSave}>Save Changes</Button>
+          {tab !== 'danger' && <Button icon={Save} loading={saving} onClick={handleSave}>Save Changes</Button>}
         </header>
         <main className="flex-1 overflow-y-auto p-8"><div className="max-w-4xl mx-auto flex gap-10">
           <div className="w-48 shrink-0 space-y-1">
-            <Button variant={activeTab === 'design' ? 'secondary' : 'ghost'} icon={Palette} onClick={() => setActiveTab('design')} className="w-full justify-start">Design</Button>
-            <Button variant={activeTab === 'installation' ? 'secondary' : 'ghost'} icon={Code} onClick={() => setActiveTab('installation')} className="w-full justify-start">Installation</Button>
+            <Button variant={tab === 'design' ? 'secondary' : 'ghost'} icon={Palette} onClick={() => setTab('design')} className="w-full justify-start text-sm">Design</Button>
+            <Button variant={tab === 'install' ? 'secondary' : 'ghost'} icon={Code} onClick={() => setTab('install')} className="w-full justify-start text-sm">Installation</Button>
+            <Button variant={tab === 'danger' ? 'secondary' : 'ghost'} icon={Trash2} onClick={() => setTab('danger')} className="w-full justify-start text-sm text-red-500 hover:text-red-600">Danger Zone</Button>
           </div>
           <div className="flex-1">
-            {activeTab === 'design' ? (
+            {tab === 'design' && (
               <div className="space-y-8 animate-in fade-in">
-                <section className="card p-6 space-y-6">
-                  <LogoUpload currentLogo={formData.logo} onUpload={(logo) => setFormData({ ...formData, logo })} />
-                  <Input label="Name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
-                  <Input label="Color" type="color" value={formData.color} onChange={e => setFormData({ ...formData, color: e.target.value })} />
-                </section>
+                <section className="card p-6 space-y-6"><LogoUpload currentLogo={formData.logo} onUpload={logo => setFormData({ ...formData, logo })} /><Input label="Name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} /><Input label="Color" type="color" value={formData.color} onChange={e => setFormData({ ...formData, color: e.target.value })} /></section>
                 <DesignPreview color={formData.color} name={formData.name} logo={formData.logo} />
               </div>
-            ) : <InstallationGuide workspaceId={workspaceId} />}
+            )}
+            {tab === 'install' && <InstallationGuide workspaceId={workspaceId} />}
+            {tab === 'danger' && <DeleteWorkspace workspaceId={workspaceId} name={ws.name} />}
           </div>
         </div></main>
       </div>

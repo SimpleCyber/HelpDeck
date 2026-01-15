@@ -1,28 +1,47 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { doc, getDoc, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "firebase/firestore";
+import { useEffect, useState, Suspense } from "react";
+import { useParams, useSearchParams } from "next/navigation";
+import { doc, getDoc, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, where, getDocs, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { WidgetBubble } from "@/components/widget/WidgetBubble";
 import { WidgetHeader } from "@/components/widget/WidgetHeader";
 import { WidgetIdentify } from "@/components/widget/WidgetIdentify";
 import { WidgetChat } from "@/components/widget/WidgetChat";
+import { AlertCircle } from "lucide-react";
 
-export default function ChatWidget() {
-  const { workspaceId } = useParams() as { workspaceId: string };
+function WidgetContent({ workspaceId }: { workspaceId: string }) {
+  const searchParams = useSearchParams();
   const [isOpen, setIsOpen] = useState(false);
   const [ws, setWs] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [msgs, setMsgs] = useState<any[]>([]);
   const [convId, setConvId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (workspaceId) {
-      getDoc(doc(db, "workspaces", workspaceId)).then(s => setWs(s.data()));
+    if (!workspaceId) return;
+    getDoc(doc(db, "workspaces", workspaceId)).then(s => {
+      setWs(s.exists() ? s.data() : null);
+      setLoading(false);
+    });
+    
+    const userStr = searchParams.get("user");
+    if (userStr) {
+      try { resumeOrStart(JSON.parse(decodeURIComponent(userStr))); } catch (e) {}
+    } else {
       const saved = localStorage.getItem(`crisp_conv_${workspaceId}`);
       if (saved) setConvId(saved);
     }
-  }, [workspaceId]);
+  }, [workspaceId, searchParams]);
+
+  const resumeOrStart = async (u: any) => {
+    const q = query(collection(db, "workspaces", workspaceId, "conversations"), where(u.userId ? "externalId" : "userEmail", "==", u.userId || u.email), limit(1));
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      setConvId(snap.docs[0].id);
+      localStorage.setItem(`crisp_conv_${workspaceId}`, snap.docs[0].id);
+    } else { onStart(u.name || "User", u.email || "", u.userId || null); }
+  };
 
   useEffect(() => {
     if (convId && workspaceId) return onSnapshot(query(collection(db, "workspaces", workspaceId, "conversations", convId, "messages"), orderBy("createdAt", "asc")), s => setMsgs(s.docs.map(d => ({ id: d.id, ...d.data() }))));
@@ -30,17 +49,29 @@ export default function ChatWidget() {
 
   const toggle = () => { setIsOpen(!isOpen); window.parent.postMessage(!isOpen ? 'expand' : 'collapse', '*'); };
 
-  const onStart = async (userName: string, userEmail: string) => {
-    const r = await addDoc(collection(db, "workspaces", workspaceId, "conversations"), { userName, userEmail, createdAt: serverTimestamp(), status: "open" });
+  const onStart = async (userName: string, userEmail: string, externalId: string | null = null) => {
+    const r = await addDoc(collection(db, "workspaces", workspaceId, "conversations"), { userName, userEmail, externalId, createdAt: serverTimestamp(), status: "open" });
     localStorage.setItem(`crisp_conv_${workspaceId}`, r.id);
     setConvId(r.id);
   };
 
-  const onSend = async (text: string) => {
-    await addDoc(collection(db, "workspaces", workspaceId, "conversations", convId!, "messages"), { text, sender: "user", createdAt: serverTimestamp() });
-  };
+  if (loading) return null;
 
-  if (!ws) return null;
+  if (!ws) {
+    return (
+      <div className="fixed bottom-4 right-4 flex items-center justify-center pointer-events-auto">
+        {isOpen ? (
+          <div className="w-80 h-96 bg-white rounded-2xl shadow-2xl flex flex-col items-center justify-center p-8 text-center border animate-in slide-in-from-bottom-4">
+             <AlertCircle size={48} className="text-red-400 mb-4" />
+             <h3 className="font-bold text-lg mb-2">Out of Service</h3>
+             <p className="text-gray-400 text-sm">The help desk for this website is currently unavailable.</p>
+             <button onClick={toggle} className="mt-8 text-sm font-bold text-gray-500 hover:text-gray-800">Close</button>
+          </div>
+        ) : <WidgetBubble isOpen={isOpen} onClick={toggle} color="#9ca3af" />}
+      </div>
+    );
+  }
+
   const { color = "#3b82f6", name = ws.name, logo = "" } = ws.settings || {};
 
   return (
@@ -48,10 +79,17 @@ export default function ChatWidget() {
       {isOpen && (
         <div className="w-full h-full max-h-[580px] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border pointer-events-auto mb-4 animate-in slide-in-from-bottom-4">
           <WidgetHeader name={name} logo={logo} color={color} onCollapse={toggle} />
-          {!convId ? <WidgetIdentify onStart={onStart} color={color} /> : <WidgetChat messages={msgs} onSend={onSend} color={color} />}
+          {!convId ? <WidgetIdentify onStart={onStart} color={color} /> : <WidgetChat messages={msgs} onSend={async (text) => {
+            await addDoc(collection(db, "workspaces", workspaceId, "conversations", convId!, "messages"), { text, sender: "user", createdAt: serverTimestamp() });
+          }} color={color} />}
         </div>
       )}
       <WidgetBubble isOpen={isOpen} onClick={toggle} color={color} />
     </div>
   );
+}
+
+export default function ChatWidget() {
+  const { workspaceId } = useParams() as { workspaceId: string };
+  return <Suspense fallback={null}><WidgetContent workspaceId={workspaceId} /></Suspense>;
 }
