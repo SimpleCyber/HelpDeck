@@ -23,10 +23,10 @@
   const iframe = document.createElement('iframe');
   iframe.src = `${baseUrl}/widget/${websiteId}?v=1${userParam}`;
   iframe.style.position = 'fixed';
-  iframe.style.bottom = '8px';
-  iframe.style.right = '8px';
-  iframe.style.width = '64px';
-  iframe.style.height = '64px';
+  iframe.style.bottom = '0';
+  iframe.style.right = '0';
+  iframe.style.width = '80px';
+  iframe.style.height = '80px';
   iframe.style.border = 'none';
   iframe.style.background = 'transparent';
 iframe.setAttribute('allowtransparency', 'true');
@@ -36,11 +36,17 @@ iframe.setAttribute('allowtransparency', 'true');
   
   window.addEventListener('message', (event) => {
     if (event.data === 'expand') {
-      iframe.style.width = '396px';
-      iframe.style.height = '656px';
+      iframe.style.width = '412px';
+      iframe.style.height = '672px';
+      iframe.style.maxWidth = '100vw';
+      iframe.style.maxHeight = '100vh';
+      iframe.style.bottom = '0';
+      iframe.style.right = '0';
     } else if (event.data === 'collapse') {
       iframe.style.width = '80px';
       iframe.style.height = '80px';
+      iframe.style.maxWidth = '';
+      iframe.style.maxHeight = '';
     }
   });
 

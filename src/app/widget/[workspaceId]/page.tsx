@@ -92,7 +92,7 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
       `}} />
       {/* Completely transparent - only bubble or popup visible */}
       {isOpen ? (
-        <div className="fixed bottom-4 right-4 w-[380px] h-[640px] bg-[#fafafa] rounded-[2rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.2)] flex flex-col overflow-hidden pointer-events-auto animate-in slide-in-from-bottom-6 transition-all duration-500 ease-out">
+        <div className="fixed inset-4 bg-[#fafafa] rounded-[2rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.2)] flex flex-col overflow-hidden pointer-events-auto animate-in slide-in-from-bottom-6 transition-all duration-500 ease-out">
           <WidgetHeader name={name} logo={logo} color={color} onCollapse={toggle} />
           <div className="flex-1 flex flex-col min-h-0 bg-[#fafafa]">
             {!convId ? <WidgetIdentify onStart={onStart} color={color} /> : <WidgetChat messages={msgs} onSend={async (text) => {
@@ -101,9 +101,7 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
           </div>
         </div>
       ) : (
-        <div className="fixed bottom-4 right-4">
-          <WidgetBubble isOpen={isOpen} onClick={toggle} color={color} />
-        </div>
+        <WidgetBubble isOpen={isOpen} onClick={toggle} color={color} />
       )}
     </>
   );
