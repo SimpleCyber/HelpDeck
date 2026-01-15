@@ -67,7 +67,7 @@ export function WidgetChat({ messages, onSend, color }: { messages: any[], onSen
               "rounded-2xl px-4 py-3 cursor-text border transition-all duration-200",
               text.length > 0 
                 ? "bg-white border-gray-200 shadow-sm ring-1 ring-gray-100" 
-                : "bg-gray-50/50 border-gray-100 focus-within:border-gray-200 focus-within:bg-white focus-within:shadow-sm"
+                : "bg-white border-gray-100 focus-within:border-gray-200 "
             )}
             onClick={() => inputRef.current?.focus()}
           >
