@@ -195,7 +195,7 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
-      <HelpDeckWidget user={user} />
+      <HelpDeckWidget />
     </div>
   );
 }

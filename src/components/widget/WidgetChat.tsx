@@ -64,8 +64,10 @@ export function WidgetChat({ messages, onSend, color }: { messages: any[], onSen
           
           <div 
             className={cn(
-              "rounded-2xl px-4 py-3 cursor-text border border-transparent",
-              text.length > 0 ? "bg-gray-50" : "bg-transparent border-gray-100"
+              "rounded-2xl px-4 py-3 cursor-text border transition-all duration-200",
+              text.length > 0 
+                ? "bg-white border-gray-200 shadow-sm ring-1 ring-gray-100" 
+                : "bg-gray-50/50 border-gray-100 focus-within:border-gray-200 focus-within:bg-white focus-within:shadow-sm"
             )}
             onClick={() => inputRef.current?.focus()}
           >
@@ -75,8 +77,7 @@ export function WidgetChat({ messages, onSend, color }: { messages: any[], onSen
               onChange={e => setText(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(e); } }}
               placeholder="Compose your message..."
-              className="w-full bg-transparent border-none focus:ring-0 text-[15px] text-slate-800 placeholder-slate-300 p-0 min-h-[44px] resize-none leading-relaxed outline-none focus:outline-none"
-              style={{ outline: 'none', boxShadow: 'none', border: 'none' }}
+              className="w-full bg-transparent border-none focus:ring-0 text-[15px] text-slate-800 placeholder-slate-300 p-0 min-h-[44px] resize-none leading-relaxed"
             />
           </div>
 
