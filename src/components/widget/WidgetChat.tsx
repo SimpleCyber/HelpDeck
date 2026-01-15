@@ -43,7 +43,7 @@ export function WidgetChat({ messages, onSend, color }: { messages: any[], onSen
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-white">
+    <div className="flex-1 flex flex-col min-h-0 bg-transparent">
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 space-y-1.5 scroll-smooth">
         {/* Date Separator Example */}
         <div className="flex items-center justify-center gap-4 py-2">
@@ -55,7 +55,7 @@ export function WidgetChat({ messages, onSend, color }: { messages: any[], onSen
         {messages.map(m => <MessageBubble key={m.id} message={m} color={color} />)}
       </div>
 
-      <div className="px-6 py-4 pb-8 bg-white flex flex-col gap-4">
+      <div className="px-6 py-4 pb-8 bg-transparent flex flex-col gap-4">
    
 
         <form onSubmit={handleSubmit} className="space-y-4 relative">

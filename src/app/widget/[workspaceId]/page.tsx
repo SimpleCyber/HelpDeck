@@ -19,6 +19,11 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
   const [convId, setConvId] = useState<string | null>(null);
 
   useEffect(() => {
+    document.body.style.backgroundColor = 'transparent';
+    document.documentElement.style.backgroundColor = 'transparent';
+  }, []);
+
+  useEffect(() => {
     if (!workspaceId) return;
     getDoc(doc(db, "workspaces", workspaceId)).then(s => {
       setWs(s.exists() ? s.data() : null);
@@ -57,7 +62,6 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
   if (!ws) {
     return (
       <>
-        <style dangerouslySetInnerHTML={{ __html: `html, body { background: transparent !important; overflow: hidden !important; margin: 0; padding: 0; }` }} />
         <div className="fixed bottom-2 right-2 flex flex-col items-end pointer-events-none">
           {isOpen && (
             <div className="w-80 h-[400px] bg-white rounded-[2rem] shadow-2xl flex flex-col items-center justify-center p-8 text-center border pointer-events-auto mb-3 animate-in slide-in-from-bottom-4 transition-all duration-300">
@@ -77,12 +81,6 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: `
-        html, body { 
-          background: transparent !important; 
-          overflow: hidden !important;
-          margin: 0;
-          padding: 0;
-        }
         * { outline: none !important; -webkit-tap-highlight-color: transparent; }
       `}} />
       <div className="fixed inset-0 flex flex-col items-end justify-end p-2 pointer-events-none">

@@ -10,6 +10,7 @@ import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { WorkspaceCard } from "@/components/admin/WorkspaceCard";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import HelpDeckWidget from "@/components/includeHelpDesk";
 
 export default function AdminDashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -80,6 +81,7 @@ export default function AdminDashboard() {
           </div>
         ) : (
           <main className="flex-1 overflow-y-auto text-[var(--text-main)]">
+            
             <div className="max-w-6xl mx-auto p-12">
               {/* Header */}
               <div className="flex justify-between items-end mb-12">
@@ -193,6 +195,7 @@ export default function AdminDashboard() {
           </div>
         </div>
       )}
+      <HelpDeckWidget user={user} />
     </div>
   );
 }
