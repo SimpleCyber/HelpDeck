@@ -26,7 +26,7 @@
   iframe.style.bottom = '8px';
   iframe.style.right = '8px';
   iframe.style.width = '60px';
-  iframe.style.height = '64px';
+  iframe.style.height = '60px';
   iframe.style.border = 'none';
   iframe.style.background = 'transparent';
 iframe.setAttribute('allowtransparency', 'true');
@@ -36,11 +36,11 @@ iframe.setAttribute('allowtransparency', 'true');
   
   window.addEventListener('message', (event) => {
     if (event.data === 'expand') {
-      iframe.style.width = '396px';
-      iframe.style.height = '656px';
+      iframe.style.width = '380px';
+      iframe.style.height = '640px';
     } else if (event.data === 'collapse') {
-      iframe.style.width = '64px';
-      iframe.style.height = '64px';
+      iframe.style.width = '60px';
+      iframe.style.height = '60px';
     }
   });
 
