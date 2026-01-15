@@ -6,7 +6,7 @@ export function MessageBubble({ message, color }: { message: any, color: string 
   const isAdmin = message.sender === "admin" || message.sender === "support";
 
   return (
-    <div className={cn("flex flex-col group animate-in fade-in slide-in-from-bottom-2 duration-500", isAdmin ? "items-start" : "items-end")}>
+    <div className={cn("flex flex-col group animate-in fade-in slide-in-from-bottom-2 duration-500 helpdeck-widget", isAdmin ? "items-start" : "items-end")}>
       {isAdmin && (
         <div className="flex items-center gap-2 mb-1.5 pl-1 opacity-60">
            <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
@@ -19,7 +19,7 @@ export function MessageBubble({ message, color }: { message: any, color: string 
           "max-w-[80%] transition-all shadow-sm overflow-hidden border",
           isAdmin 
             ? "text-white rounded-[24px] rounded-tl-none border-transparent shadow-md"
-            : "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-[24px] rounded-tr-none border-gray-100 dark:border-slate-700/50" 
+            : "bg-slate-50/80 backdrop-blur-sm dark:bg-slate-800/80 text-slate-800 dark:text-slate-100 rounded-[24px] rounded-tr-none border-gray-100 dark:border-slate-700/50" 
         )}
         style={{ 
           backgroundColor: isAdmin ? color : undefined,
