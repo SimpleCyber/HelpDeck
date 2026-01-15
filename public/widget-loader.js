@@ -35,7 +35,7 @@
   window.addEventListener('message', (event) => {
     if (event.data === 'expand') {
       iframe.style.width = '380px';
-      iframe.style.height = '750px';
+      iframe.style.height = '700px';
     } else if (event.data === 'collapse') {
       iframe.style.width = '80px';
       iframe.style.height = '80px';

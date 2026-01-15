@@ -18,13 +18,17 @@ export function MessageBubble({ message, color }: { message: any, color: string 
       
       <div 
         className={cn(
-          "max-w-[85%] px-5 py-2.5 text-[13px] leading-relaxed font-medium transition-all shadow-sm",
+          "max-w-[85%] px-1 py-1 text-[13px] leading-relaxed font-medium transition-all shadow-sm overflow-hidden",
           isAdmin 
             ? "bg-[#262626] text-white rounded-[1.25rem] rounded-tl-none" 
             : "bg-[#f1f1f1] text-[#262626] rounded-[1.25rem] rounded-tr-none"
         )}
       >
-        {message.text}
+        {message.text.startsWith("data:image") ? (
+          <img src={message.text} alt="Attached image" className="rounded-xl w-full h-auto block" />
+        ) : (
+          <div className="px-4 py-2">{message.text}</div>
+        )}
       </div>
       
       {/* Optional: Status indicators like seen or time can go here */}

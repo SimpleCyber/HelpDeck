@@ -1,22 +1,35 @@
 "use client";
 
-import { MessageSquare, Minus } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 
 export function WidgetHeader({ name, logo, color, onCollapse }: { name: string, logo: string, color: string, onCollapse: () => void }) {
   return (
-    <div className="relative pt-8 pb-5 px-6 bg-[#171717] overflow-hidden shrink-0">
+    <div className="relative pt-12 pb-5 px-6 bg-[#171717] overflow-hidden shrink-0">
       {/* Subtle Noise Pattern Overlay */}
       <div className="absolute inset-0 noise-pattern pointer-events-none" />
       
+      {/* Top Badge with Tooltip */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 group/chat z-20">
+
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-black text-white text-[10px] rounded-lg opacity-0 group-hover/chat:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl border border-white/10">
+          Help Desk
+        </div>
+      </div>
+
       <div className="relative z-10 flex flex-col items-center text-center space-y-4">
-        {/* Avatar Cluster */}
-        <div className="flex items-center -space-x-2">
-          <div className="w-10 h-10 rounded-full border-2 border-[#171717] bg-[#bef264] flex items-center justify-center font-bold text-xs">C</div>
-          <div className="w-10 h-10 rounded-full border-2 border-[#171717] bg-gray-600 overflow-hidden">
-            <img src="https://ui-avatars.com/api/?name=Support&background=333&color=fff" alt="Avatar" className="w-full h-full object-cover" />
+        {/* Workspace Icon with Tooltip */}
+        <div className="relative group/logo">
+          <div className="w-12 h-12 rounded-full border-2 border-[#171717] bg-white overflow-hidden flex items-center justify-center shadow-[0_0_20px_rgba(0,0,0,0.3)] transition-transform hover:scale-105">
+            {logo ? (
+              <img src={logo} alt={name} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-white font-black text-xl" style={{ backgroundColor: color }}>
+                {name[0]}
+              </div>
+            )}
           </div>
-          <div className="w-10 h-10 rounded-full border-2 border-[#171717] bg-blue-500 flex items-center justify-center text-white">
-            <MessageSquare size={16} className="fill-current" />
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-black text-white text-[10px] rounded-lg opacity-0 group-hover/logo:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl border border-white/10">
+            {name}
           </div>
         </div>
 
@@ -28,9 +41,6 @@ export function WidgetHeader({ name, logo, color, onCollapse }: { name: string, 
           </div>
         </div>
       </div>
-
-      {/* Collapse button actually hidden in the reference, but let's keep it minimal if needed or remove it for exact match */}
-      {/* <button onClick={onCollapse} className="absolute top-4 right-4 p-2 text-white/50 hover:text-white"><Minus size={18} /></button> */}
     </div>
   );
 }

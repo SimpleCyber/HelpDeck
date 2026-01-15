@@ -83,10 +83,11 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
           margin: 0;
           padding: 0;
         }
+        * { outline: none !important; -webkit-tap-highlight-color: transparent; }
       `}} />
       <div className="fixed inset-0 flex flex-col items-end justify-end p-2 pointer-events-none">
         {isOpen && (
-          <div className="w-full max-w-[380px] h-full max-h-[720px] bg-white rounded-[2rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.2)] flex flex-col overflow-hidden pointer-events-auto mb-3 animate-in slide-in-from-bottom-6 transition-all duration-500 ease-out">
+          <div className="w-full max-w-[380px] h-full max-h-[600px] bg-white rounded-[2rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.2)] flex flex-col overflow-hidden pointer-events-auto mb-3 animate-in slide-in-from-bottom-6 transition-all duration-500 ease-out">
             <WidgetHeader name={name} logo={logo} color={color} onCollapse={toggle} />
             <div className="flex-1 flex flex-col min-h-0">
               {!convId ? <WidgetIdentify onStart={onStart} color={color} /> : <WidgetChat messages={msgs} onSend={async (text) => {
