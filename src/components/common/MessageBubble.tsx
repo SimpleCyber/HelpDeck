@@ -1,25 +1,33 @@
+"use client";
+
 import { cn } from "@/lib/utils";
 
-interface Message {
-  id: string;
-  text: string;
-  sender: 'user' | 'admin';
-  createdAt?: any;
-}
-
-export function MessageBubble({ message, color }: { message: Message, color: string }) {
-  const isAdmin = message.sender === 'admin';
-  const time = message.createdAt?.toDate ? new Date(message.createdAt.toDate()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+export function MessageBubble({ message, color }: { message: any, color: string }) {
+  const isAdmin = message.sender === "admin" || message.sender === "support";
 
   return (
-    <div className={cn("flex flex-col max-w-[85%] sm:max-w-[70%]", isAdmin ? "ml-auto items-end" : "mr-auto items-start")}>
+    <div className={cn("flex flex-col group animate-in fade-in slide-in-from-bottom-2 duration-300", isAdmin ? "items-start" : "items-end")}>
+      {isAdmin && (
+        <div className="flex items-center gap-2 mb-1 pl-1">
+           <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-white scale-75 origin-left">
+             <div className="bg-white/20 w-full h-full rounded-full" />
+           </div>
+           <span className="text-[10px] font-bold text-slate-400 tracking-tight">Support</span>
+        </div>
+      )}
+      
       <div 
-        className={cn("p-3 rounded-2xl text-sm shadow-sm", isAdmin ? "text-white rounded-br-none" : "bg-white text-gray-800 rounded-bl-none")}
-        style={isAdmin ? { backgroundColor: color } : {}}
+        className={cn(
+          "max-w-[85%] px-5 py-2.5 text-[13px] leading-relaxed font-medium transition-all shadow-sm",
+          isAdmin 
+            ? "bg-[#262626] text-white rounded-[1.25rem] rounded-tl-none" 
+            : "bg-[#f1f1f1] text-[#262626] rounded-[1.25rem] rounded-tr-none"
+        )}
       >
         {message.text}
       </div>
-      {time && <span className="text-[10px] text-gray-400 mt-1 px-1">{time}</span>}
+      
+      {/* Optional: Status indicators like seen or time can go here */}
     </div>
   );
 }

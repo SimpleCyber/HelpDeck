@@ -23,8 +23,8 @@
   const iframe = document.createElement('iframe');
   iframe.src = `${baseUrl}/widget/${websiteId}?v=1${userParam}`;
   iframe.style.position = 'fixed';
-  iframe.style.bottom = '20px';
-  iframe.style.right = '20px';
+  iframe.style.bottom = '8px';
+  iframe.style.right = '8px';
   iframe.style.width = '80px';
   iframe.style.height = '80px';
   iframe.style.border = 'none';
@@ -34,8 +34,8 @@
   
   window.addEventListener('message', (event) => {
     if (event.data === 'expand') {
-      iframe.style.width = '400px';
-      iframe.style.height = '610px';
+      iframe.style.width = '380px';
+      iframe.style.height = '750px';
     } else if (event.data === 'collapse') {
       iframe.style.width = '80px';
       iframe.style.height = '80px';

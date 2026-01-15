@@ -24,11 +24,8 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
       setWs(s.exists() ? s.data() : null);
       setLoading(false);
     });
-    
     const userStr = searchParams.get("user");
-    if (userStr) {
-      try { resumeOrStart(JSON.parse(decodeURIComponent(userStr))); } catch (e) {}
-    } else {
+    if (userStr) { try { resumeOrStart(JSON.parse(decodeURIComponent(userStr))); } catch (e) {} } else {
       const saved = localStorage.getItem(`crisp_conv_${workspaceId}`);
       if (saved) setConvId(saved);
     }
@@ -59,33 +56,48 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
 
   if (!ws) {
     return (
-      <div className="fixed bottom-4 right-4 flex items-center justify-center pointer-events-auto">
-        {isOpen ? (
-          <div className="w-80 h-96 bg-white rounded-2xl shadow-2xl flex flex-col items-center justify-center p-8 text-center border animate-in slide-in-from-bottom-4">
-             <AlertCircle size={48} className="text-red-400 mb-4" />
-             <h3 className="font-bold text-lg mb-2">Out of Service</h3>
-             <p className="text-gray-400 text-sm">The help desk for this website is currently unavailable.</p>
-             <button onClick={toggle} className="mt-8 text-sm font-bold text-gray-500 hover:text-gray-800">Close</button>
-          </div>
-        ) : <WidgetBubble isOpen={isOpen} onClick={toggle} color="#9ca3af" />}
-      </div>
+      <>
+        <style dangerouslySetInnerHTML={{ __html: `html, body { background: transparent !important; overflow: hidden !important; margin: 0; padding: 0; }` }} />
+        <div className="fixed bottom-2 right-2 flex flex-col items-end pointer-events-none">
+          {isOpen && (
+            <div className="w-80 h-[400px] bg-white rounded-[2rem] shadow-2xl flex flex-col items-center justify-center p-8 text-center border pointer-events-auto mb-3 animate-in slide-in-from-bottom-4 transition-all duration-300">
+               <div className="w-16 h-16 rounded-3xl bg-red-50 flex items-center justify-center text-red-500 mb-6"><AlertCircle size={32} /></div>
+               <h3 className="font-bold text-lg mb-2">Out of Service</h3>
+               <p className="text-gray-400 text-sm leading-relaxed">This help desk is currently unavailable.</p>
+            </div>
+          )}
+          <WidgetBubble isOpen={isOpen} onClick={toggle} color="#9ca3af" />
+        </div>
+      </>
     );
   }
 
   const { color = "#3b82f6", name = ws.name, logo = "" } = ws.settings || {};
 
   return (
-    <div className="fixed inset-0 flex flex-col items-end justify-end p-4 pointer-events-none">
-      {isOpen && (
-        <div className="w-full h-full max-h-[580px] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border pointer-events-auto mb-4 animate-in slide-in-from-bottom-4">
-          <WidgetHeader name={name} logo={logo} color={color} onCollapse={toggle} />
-          {!convId ? <WidgetIdentify onStart={onStart} color={color} /> : <WidgetChat messages={msgs} onSend={async (text) => {
-            await addDoc(collection(db, "workspaces", workspaceId, "conversations", convId!, "messages"), { text, sender: "user", createdAt: serverTimestamp() });
-          }} color={color} />}
-        </div>
-      )}
-      <WidgetBubble isOpen={isOpen} onClick={toggle} color={color} />
-    </div>
+    <>
+      <style dangerouslySetInnerHTML={{ __html: `
+        html, body { 
+          background: transparent !important; 
+          overflow: hidden !important;
+          margin: 0;
+          padding: 0;
+        }
+      `}} />
+      <div className="fixed inset-0 flex flex-col items-end justify-end p-2 pointer-events-none">
+        {isOpen && (
+          <div className="w-full max-w-[380px] h-full max-h-[720px] bg-white rounded-[2rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.2)] flex flex-col overflow-hidden pointer-events-auto mb-3 animate-in slide-in-from-bottom-6 transition-all duration-500 ease-out">
+            <WidgetHeader name={name} logo={logo} color={color} onCollapse={toggle} />
+            <div className="flex-1 flex flex-col min-h-0">
+              {!convId ? <WidgetIdentify onStart={onStart} color={color} /> : <WidgetChat messages={msgs} onSend={async (text) => {
+                await addDoc(collection(db, "workspaces", workspaceId, "conversations", convId!, "messages"), { text, sender: "user", createdAt: serverTimestamp() });
+              }} color={color} />}
+            </div>
+          </div>
+        )}
+        <WidgetBubble isOpen={isOpen} onClick={toggle} color={color} />
+      </div>
+    </>
   );
 }
 
