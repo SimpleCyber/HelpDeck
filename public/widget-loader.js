@@ -28,6 +28,8 @@
   iframe.style.width = '80px';
   iframe.style.height = '80px';
   iframe.style.border = 'none';
+  iframe.style.background = 'transparent';
+iframe.setAttribute('allowtransparency', 'true');
   iframe.style.zIndex = '2147483647';
   iframe.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
   iframe.id = 'helpdeck-widget-iframe';
