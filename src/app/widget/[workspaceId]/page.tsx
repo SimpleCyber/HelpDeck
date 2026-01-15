@@ -14,6 +14,8 @@ import {
   where,
   getDocs,
   limit,
+  increment,
+  updateDoc,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { WidgetBubble } from "@/components/widget/WidgetBubble";
@@ -29,6 +31,7 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
   const [loading, setLoading] = useState(true);
   const [msgs, setMsgs] = useState<any[]>([]);
   const [convId, setConvId] = useState<string | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   /* -------------------------------------------------- */
   /* GLOBAL iframe safety                               */
@@ -92,14 +95,38 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
         ),
         orderBy("createdAt", "asc")
       ),
-      (s) => setMsgs(s.docs.map((d) => ({ id: d.id, ...d.data() })))
+      (s) => {
+        setMsgs(s.docs.map((d) => ({ id: d.id, ...d.data() })));
+        
+        // Listen to conversation doc for unread count
+        const convDoc = s.docs[0]?.ref.parent.parent; // This is getting collection, wait. 
+        // We are listening to messages collection. We need to listen to conversation doc ideally.
+        // Actually, let's just use a separate listener for conversation metadata if needed, 
+        // OR rely on the fact that we need the conversation ID.
+      }
     );
   }, [convId, workspaceId]);
 
-  const toggle = () => {
+  // Listen to conversation metadata for unread count
+  useEffect(() => {
+    if (!convId || !workspaceId) return;
+    return onSnapshot(doc(db, "workspaces", workspaceId, "conversations", convId), (s) => {
+       const data = s.data();
+       if (data) setUnreadCount(data.unreadCountUser || 0);
+    });
+  }, [convId, workspaceId]);
+
+  const toggle = async () => {
     const next = !isOpen;
     setIsOpen(next);
     window.parent.postMessage(next ? "expand" : "collapse", "*");
+
+    if (next && convId && unreadCount > 0) {
+      // Clear unread count when opening
+      await updateDoc(doc(db, "workspaces", workspaceId, "conversations", convId), {
+        unreadCountUser: 0
+      });
+    }
   };
 
   const onStart = async (
@@ -185,6 +212,18 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
                       createdAt: serverTimestamp(),
                     }
                   );
+
+                  // Update counts
+                  await updateDoc(doc(db, "workspaces", workspaceId, "conversations", convId!), {
+                    unreadCountAdmin: increment(1),
+                    lastMessage: text,
+                    lastUpdatedAt: serverTimestamp()
+                  });
+
+                  // Update workspace total unread
+                  await updateDoc(doc(db, "workspaces", workspaceId), {
+                    unreadCount: increment(1)
+                  });
                 }}
                 color={color}
               />
@@ -192,7 +231,7 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
           </div>
         </div>
       ) : (
-        <WidgetBubble isOpen={isOpen} onClick={toggle} color={color} />
+        <WidgetBubble isOpen={isOpen} onClick={toggle} color={color} unreadCount={unreadCount} />
       )}
     </div>
   );

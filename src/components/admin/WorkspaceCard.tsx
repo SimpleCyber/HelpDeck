@@ -19,6 +19,14 @@ export function WorkspaceCard({ workspace }: { workspace: any }) {
            <MessageSquare size={18} />
          </div>
       </div>
+      
+      {workspace.unreadCount > 0 && (
+         <div className="absolute top-5 right-5 z-10">
+            <div className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full border-2 border-[var(--bg-card)] shadow-sm animate-in zoom-in">
+              {workspace.unreadCount} New
+            </div>
+         </div>
+      )}
 
       <div className="flex items-start gap-4 mb-6">
         {logo ? (

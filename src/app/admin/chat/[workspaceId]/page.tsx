@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { MessageSquare, Send, Loader2, Search, Image as ImageIcon } from "lucide-react";
-import { doc, getDoc, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { doc, getDoc, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, updateDoc, increment } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { Button } from "@/components/ui/Button";
@@ -33,12 +33,39 @@ export default function AdminChat() {
     }
   }, [workspaceId, user, authL, router]);
 
+  // Read receipt / auto-read logic
   useEffect(() => {
-    if (selected) return onSnapshot(query(collection(db, "workspaces", workspaceId, "conversations", selected.id, "messages"), orderBy("createdAt", "asc")), s => {
+    if (!selected || !workspaceId) return;
+
+    // Listen to the conversation document itself to auto-clear unread counts
+    const unsubConv = onSnapshot(doc(db, "workspaces", workspaceId, "conversations", selected.id), async (docSnap) => {
+      const data = docSnap.data();
+      if (data && data.unreadCountAdmin > 0) {
+        // Decrement workspace unread count
+        const amount = data.unreadCountAdmin;
+        
+        // We use a batch or just sequential updates. Sequential is fine here.
+        // 1. Reset conversation count
+        await updateDoc(docSnap.ref, { unreadCountAdmin: 0 });
+        
+        // 2. Decrement workspace count
+        await updateDoc(doc(db, "workspaces", workspaceId), {
+            unreadCount: increment(-amount)
+        });
+      }
+    });
+
+    // Listen to messages
+    const unsubMsgs = onSnapshot(query(collection(db, "workspaces", workspaceId, "conversations", selected.id, "messages"), orderBy("createdAt", "asc")), s => {
       setMsgs(s.docs.map(d => ({ id: d.id, ...d.data() })));
       setTimeout(() => scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight), 100);
     });
-  }, [selected, workspaceId]);
+
+    return () => {
+      unsubConv();
+      unsubMsgs();
+    };
+  }, [selected?.id, workspaceId]); // Only re-run if ID changes
 
   const send = async (e?: React.FormEvent, content?: string) => {
     if (e) e.preventDefault();
@@ -55,7 +82,8 @@ export default function AdminChat() {
     
     await updateDoc(doc(db, "workspaces", workspaceId, "conversations", selected.id), { 
       lastMessage: content ? "📷 Image" : finalMsg, 
-      lastUpdatedAt: serverTimestamp() 
+      lastUpdatedAt: serverTimestamp(),
+      unreadCountUser: increment(1)
     });
   };
 
