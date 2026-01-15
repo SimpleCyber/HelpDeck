@@ -59,65 +59,67 @@ export default function AdminDashboard() {
     { label: "Total Views", value: "0", icon: BarChart3, color: "text-orange-600", bg: "bg-orange-50" },
   ];
 
-  if (authLoading || loading) return (
-    <div className="flex items-center justify-center min-h-screen">
-      <Loader2 className="animate-spin h-12 w-12 text-blue-600" />
-    </div>
-  );
-
   return (
     <div className="flex h-screen bg-[var(--bg-main)] overflow-hidden">
       <AdminSidebar activeTab="dashboard" />
       
-      <main className="flex-1 overflow-y-auto text-[var(--text-main)]">
-        <div className="max-w-6xl mx-auto p-12">
-          {/* Header */}
-          <div className="flex justify-between items-end mb-12">
-            <div>
-              <p className="text-blue-600 font-bold mb-2">Overview</p>
-              <h1 className="text-4xl font-black text-[var(--text-main)] tracking-tight">
-                Welcome back, {user?.displayName?.split(' ')[0] || user?.email?.split('@')[0]}
-              </h1>
-            </div>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {authLoading || loading ? (
+          <div className="flex-1 flex items-center justify-center">
+            <Loader2 className="animate-spin h-12 w-12 text-blue-600" />
           </div>
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            {stats.map((stat, i) => (
-              <div key={i} className="bg-[var(--bg-card)] p-6 rounded-3xl border border-[var(--border-color)] shadow-sm">
-                <div className={`${stat.bg} ${stat.color} dark:bg-opacity-20 w-12 h-12 rounded-2xl flex items-center justify-center mb-4`}>
-                  <stat.icon size={24} />
+        ) : (
+          <main className="flex-1 overflow-y-auto text-[var(--text-main)]">
+            <div className="max-w-6xl mx-auto p-12">
+              {/* Header */}
+              <div className="flex justify-between items-end mb-12">
+                <div>
+                  <p className="text-blue-600 font-bold mb-2">Overview</p>
+                  <h1 className="text-4xl font-black text-[var(--text-main)] tracking-tight">
+                    Welcome back, {user?.displayName?.split(' ')[0] || user?.email?.split('@')[0]}
+                  </h1>
                 </div>
-                <div className="text-3xl font-black text-[var(--text-main)] mb-1">{stat.value}</div>
-                <div className="text-sm font-bold text-[var(--text-muted)]">{stat.label}</div>
               </div>
-            ))}
-          </div>
 
-          {/* Workspaces Section */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-               <h2 className="text-2xl font-black text-[var(--text-main)] tracking-tight">Your Workspaces</h2>
-               <div className="text-sm font-semibold text-[var(--text-muted)]">{workspaces.length} total</div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {workspaces.map(ws => (
-                <WorkspaceCard key={ws.id} workspace={ws} />
-              ))}
-              <button 
-                onClick={() => setShowCreateModal(true)}
-                className="aspect-video rounded-3xl border-2 border-dashed border-[var(--border-color)] hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-all flex flex-col items-center justify-center gap-3 text-[var(--text-muted)] hover:text-blue-600 group"
-              >
-                <div className="w-12 h-12 rounded-2xl bg-[var(--bg-main)] flex items-center justify-center group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 transition-colors">
-                   <Plus size={24} />
+              {/* Stats Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                {stats.map((stat, i) => (
+                  <div key={i} className="bg-[var(--bg-card)] p-6 rounded-3xl border border-[var(--border-color)] shadow-sm">
+                    <div className={`${stat.bg} ${stat.color} dark:bg-opacity-20 w-12 h-12 rounded-2xl flex items-center justify-center mb-4`}>
+                      <stat.icon size={24} />
+                    </div>
+                    <div className="text-3xl font-black text-[var(--text-main)] mb-1">{stat.value}</div>
+                    <div className="text-sm font-bold text-[var(--text-muted)]">{stat.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Workspaces Section */}
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                   <h2 className="text-2xl font-black text-[var(--text-main)] tracking-tight">Your Workspaces</h2>
+                   <div className="text-sm font-semibold text-[var(--text-muted)]">{workspaces.length} total</div>
                 </div>
-                <span className="font-bold">Create New</span>
-              </button>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {workspaces.map(ws => (
+                    <WorkspaceCard key={ws.id} workspace={ws} />
+                  ))}
+                  <button 
+                    onClick={() => setShowCreateModal(true)}
+                    className="aspect-video rounded-3xl border-2 border-dashed border-[var(--border-color)] hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-all flex flex-col items-center justify-center gap-3 text-[var(--text-muted)] hover:text-blue-600 group"
+                  >
+                    <div className="w-12 h-12 rounded-2xl bg-[var(--bg-main)] flex items-center justify-center group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30 transition-colors">
+                       <Plus size={24} />
+                    </div>
+                    <span className="font-bold">Create New</span>
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      </main>
+          </main>
+        )}
+      </div>
 
       {/* Modern Create Modal */}
       {showCreateModal && (

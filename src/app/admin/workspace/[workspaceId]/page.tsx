@@ -44,79 +44,115 @@ export default function WorkspaceSettings() {
     setSaving(false);
   };
 
-  if (authL || !ws) return <div className="flex items-center justify-center min-h-screen"><Loader2 className="animate-spin h-10 w-10 text-blue-500" /></div>;
-
   return (
     <div className="flex h-screen bg-[var(--bg-main)] text-[var(--text-main)] overflow-hidden">
       <AdminSidebar activeTab="settings" workspaceId={workspaceId} />
+      
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-20 bg-[var(--bg-card)] border-b border-[var(--border-color)] px-8 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-6">
-            <Button variant="ghost" onClick={() => router.push("/admin/dashboard")} className="p-2">
-              <ChevronLeft size={24} />
-            </Button>
-            <div>
-              <h2 className="text-xl font-black tracking-tight">{ws.name}</h2>
-              <p className="text-xs text-[var(--text-muted)] font-bold">Workspace Settings</p>
-            </div>
+        {authL || !ws ? (
+          <div className="flex-1 flex items-center justify-center">
+            <Loader2 className="animate-spin h-10 w-10 text-blue-500" />
           </div>
-          {tab !== 'danger' && (
-            <Button 
-               icon={Save} 
-               loading={saving} 
-               onClick={handleSave}
-               className="h-11 px-6 rounded-xl shadow-lg shadow-blue-500/10"
-            >
-              Save Changes
-            </Button>
-          )}
-        </header>
-
-        <main className="flex-1 overflow-y-auto p-12">
-          <div className="max-w-5xl mx-auto flex gap-12">
-            <div className="w-64 shrink-0 space-y-2">
-              <div className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest px-4 mb-4">Settings Menu</div>
-              <Button variant={tab === 'design' ? 'secondary' : 'ghost'} icon={Palette} onClick={() => setTab('design')} className="w-full justify-start h-12 px-4 rounded-xl">Design</Button>
-              <Button variant={tab === 'install' ? 'secondary' : 'ghost'} icon={Code} onClick={() => setTab('install')} className="w-full justify-start h-12 px-4 rounded-xl">Installation</Button>
-              <Button variant={tab === 'danger' ? 'secondary' : 'ghost'} icon={Trash2} onClick={() => setTab('danger')} className="w-full justify-start h-12 px-4 rounded-xl text-red-500 hover:text-red-600">Danger Zone</Button>
-            </div>
-
-            <div className="flex-1">
-              {tab === 'design' && (
-                <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                  {/* General Design Settings */}
-                  <section className="space-y-4">
-                    <h3 className="text-sm font-black text-[var(--text-muted)] uppercase tracking-wider ml-1">Workspace Identity</h3>
-                    <div className="card p-8 space-y-8">
-                      <LogoUpload currentLogo={formData.logo} onUpload={logo => setFormData({ ...formData, logo })} />
-                      <div className="grid grid-cols-2 gap-8">
-                        <Input label="Workspace Name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
-                        <div className="space-y-2">
-                           <label className="block text-sm font-semibold text-[var(--text-main)]">Brand Color</label>
-                           <div className="flex items-center gap-4">
-                              <input 
-                                type="color" 
-                                value={formData.color} 
-                                onChange={e => setFormData({ ...formData, color: e.target.value })}
-                                className="w-12 h-12 rounded-xl border-none p-0 overflow-hidden cursor-pointer"
-                              />
-                              <div className="flex-1 font-mono text-sm font-bold bg-[var(--bg-main)] px-4 py-3 rounded-xl border border-[var(--border-color)]">
-                                {formData.color.toUpperCase()}
-                              </div>
-                           </div>
-                        </div>
-                      </div>
-                    </div>
-                  </section>
-
-                  <DesignPreview color={formData.color} name={formData.name} logo={formData.logo} />
+        ) : (
+          <>
+            <header className="h-20 bg-[var(--bg-card)] border-b border-[var(--border-color)] px-8 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-6">
+                <button 
+                  onClick={() => router.push("/admin/dashboard")} 
+                  className="p-2.5 rounded-xl hover:bg-gray-100 dark:hover:bg-white/5 transition-colors text-[var(--text-muted)] hover:text-blue-600 border border-transparent hover:border-[var(--border-color)]"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+                <div>
+                  <h2 className="text-xl font-black tracking-tight">{ws.name}</h2>
+                  <p className="text-[10px] text-[var(--text-muted)] font-black uppercase tracking-widest opacity-60">Workspace Settings</p>
                 </div>
+              </div>
+              {tab !== 'danger' && (
+                <Button 
+                   icon={Save} 
+                   loading={saving} 
+                   onClick={handleSave}
+                   className="h-11 px-6 rounded-xl shadow-lg shadow-blue-500/20"
+                >
+                  Save Changes
+                </Button>
               )}
-              {tab === 'install' && <InstallationGuide workspaceId={workspaceId} />}
-              {tab === 'danger' && <DeleteWorkspace workspaceId={workspaceId} name={ws.name} />}
-            </div>
-          </div>
-        </main>
+            </header>
+
+            <main className="flex-1 overflow-y-auto p-12">
+              <div className="max-w-5xl mx-auto flex gap-12">
+                <div className="w-64 shrink-0 space-y-2">
+                  <div className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest px-4 mb-4 opacity-50">Settings Menu</div>
+                  <button 
+                    onClick={() => setTab('design')}
+                    className={cn(
+                      "w-full flex items-center gap-3 h-12 px-4 rounded-xl font-bold transition-all",
+                      tab === 'design' ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20" : "text-[var(--text-muted)] hover:bg-blue-50 dark:hover:bg-blue-900/10 hover:text-blue-600"
+                    )}
+                  >
+                    <Palette size={18} />
+                    <span>Design</span>
+                  </button>
+                  <button 
+                    onClick={() => setTab('install')}
+                    className={cn(
+                      "w-full flex items-center gap-3 h-12 px-4 rounded-xl font-bold transition-all",
+                      tab === 'install' ? "bg-blue-600 text-white shadow-lg shadow-blue-500/20" : "text-[var(--text-muted)] hover:bg-blue-50 dark:hover:bg-blue-900/10 hover:text-blue-600"
+                    )}
+                  >
+                    <Code size={18} />
+                    <span>Installation</span>
+                  </button>
+                  <button 
+                    onClick={() => setTab('danger')}
+                    className={cn(
+                      "w-full flex items-center gap-3 h-12 px-4 rounded-xl font-bold transition-all mt-8",
+                      tab === 'danger' ? "bg-red-600 text-white shadow-lg shadow-red-500/20" : "text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10"
+                    )}
+                  >
+                    <Trash2 size={18} />
+                    <span>Danger Zone</span>
+                  </button>
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  {tab === 'design' && (
+                    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                      <section className="space-y-4">
+                        <h3 className="text-xs font-black text-[var(--text-muted)] uppercase tracking-widest ml-1 opacity-50">Workspace Identity</h3>
+                        <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[32px] p-8 space-y-8 shadow-sm">
+                          <LogoUpload currentLogo={formData.logo} onUpload={logo => setFormData({ ...formData, logo })} />
+                          <div className="grid grid-cols-2 gap-8">
+                            <Input label="Workspace Name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
+                            <div className="space-y-2">
+                               <label className="block text-sm font-semibold text-[var(--text-main)]">Brand Color</label>
+                               <div className="flex items-center gap-4">
+                                  <input 
+                                    type="color" 
+                                    value={formData.color} 
+                                    onChange={e => setFormData({ ...formData, color: e.target.value })}
+                                    className="w-12 h-12 rounded-xl border-none p-0 overflow-hidden cursor-pointer shadow-sm"
+                                  />
+                                  <div className="flex-1 font-mono text-sm font-bold bg-[var(--bg-main)] px-4 py-3 rounded-xl border border-[var(--border-color)]">
+                                    {formData.color.toUpperCase()}
+                                  </div>
+                               </div>
+                            </div>
+                          </div>
+                        </div>
+                      </section>
+
+                      <DesignPreview color={formData.color} name={formData.name} logo={formData.logo} />
+                    </div>
+                  )}
+                  {tab === 'install' && <InstallationGuide workspaceId={workspaceId} />}
+                  {tab === 'danger' && <DeleteWorkspace workspaceId={workspaceId} name={ws.name} />}
+                </div>
+              </div>
+            </main>
+          </>
+        )}
       </div>
     </div>
   );

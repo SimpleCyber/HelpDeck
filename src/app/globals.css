@@ -72,6 +72,6 @@
   }
   
   .input-field {
-    @apply w-full px-4 py-2 bg-gray-50 border border-[var(--border-color)] rounded-[var(--radius-xl)] focus:ring-2 focus:ring-[var(--primary)] outline-none transition-all;
+    @apply w-full px-4 py-2 bg-gray-50 dark:bg-[#0f172a] border border-[var(--border-color)] rounded-[var(--radius-xl)] focus:ring-2 focus:ring-[var(--primary)] outline-none transition-all;
   }
 }

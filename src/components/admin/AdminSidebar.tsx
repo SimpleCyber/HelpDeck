@@ -10,6 +10,7 @@ import {
   ChevronUp, 
   ChevronDown, 
   LifeBuoy,
+  MessageSquare,
   PanelLeftClose,
   PanelLeftOpen
 } from "lucide-react";
@@ -26,6 +27,7 @@ export function AdminSidebar({ workspaceId, activeTab }: { workspaceId?: string,
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/admin/dashboard', enabled: true, section: 'main' },
     { id: 'settings-global', label: 'App Settings', icon: Settings, path: '/admin/settings', enabled: true, section: 'main' },
+    { id: 'chat', label: 'Live Inbox', icon: MessageSquare, path: `/admin/chat/${workspaceId}`, enabled: !!workspaceId, section: 'workspace' },
     { id: 'settings', label: 'Workspace Config', icon: LifeBuoy, path: `/admin/workspace/${workspaceId}`, enabled: !!workspaceId, section: 'workspace' },
   ];
 
