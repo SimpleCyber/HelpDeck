@@ -6,7 +6,7 @@ export function WidgetBubble({ isOpen, onClick, color }: { isOpen: boolean, onCl
   return (
     <button 
       onClick={onClick}
-      className="w-16 h-16 rounded-full shadow-2xl flex items-center justify-center text-white pointer-events-auto transition-all transform hover:scale-110 active:scale-95 z-[99999] group overflow-hidden helpdeck-widget"
+      className="w-16 h-16 rounded-full shadow-2xl flex items-center justify-center text-white pointer-events-auto transition-all transform hover:scale-110 active:scale-95 z-[99999] group overflow-hidden"
       style={{ backgroundColor: isOpen ? '#262626' : color }}
     >
       <div className="absolute inset-0 noise-pattern opacity-10 group-hover:opacity-20 transition-opacity" />
