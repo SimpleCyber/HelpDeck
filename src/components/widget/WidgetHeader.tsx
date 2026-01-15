@@ -1,12 +1,20 @@
 "use client";
 
-import { MessageSquare } from "lucide-react";
+import { MessageSquare, X } from "lucide-react";
 
 export function WidgetHeader({ name, logo, color, onCollapse }: { name: string, logo: string, color: string, onCollapse: () => void }) {
   return (
     <div className="relative pt-12 pb-5 px-6 bg-[#171717] overflow-hidden shrink-0">
       {/* Subtle Noise Pattern Overlay */}
       <div className="absolute inset-0 noise-pattern pointer-events-none" />
+      
+      {/* Close Button - Top Right */}
+      <button 
+        onClick={onCollapse}
+        className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition-all z-30"
+      >
+        <X size={18} strokeWidth={2} />
+      </button>
       
       {/* Top Badge with Tooltip */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 group/chat z-20">
