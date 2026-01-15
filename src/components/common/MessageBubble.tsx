@@ -19,7 +19,7 @@ export function MessageBubble({ message, color }: { message: any, color: string 
           "max-w-[80%] transition-all shadow-sm overflow-hidden border",
           isAdmin 
             ? "text-white rounded-[24px] rounded-tl-none border-transparent shadow-md"
-            : "bg-slate-50/80 backdrop-blur-sm dark:bg-slate-800/80 text-slate-800 dark:text-slate-100 rounded-[24px] rounded-tr-none border-gray-100 dark:border-slate-700/50" 
+            : "bg-slate-50/80 backdrop-blur-sm text-slate-800 rounded-[24px] rounded-tr-none border-gray-100" 
         )}
         style={{ 
           backgroundColor: isAdmin ? color : undefined,

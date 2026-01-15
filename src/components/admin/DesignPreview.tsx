@@ -16,19 +16,19 @@ export function DesignPreview({ color, name, logo }: { color: string, name: stri
       </div>
 
       {/* Window Preview */}
-      <div className="bg-[var(--bg-card)] w-[340px] rounded-[40px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] dark:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.4)] overflow-hidden border border-[var(--border-color)] animate-in fade-in slide-in-from-bottom-8 duration-1000">
+      <div className="bg-white w-[340px] rounded-[40px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] overflow-hidden border border-gray-100 animate-in fade-in slide-in-from-bottom-8 duration-1000">
         {/* Header */}
         <div className="p-7 flex items-center gap-4 text-white relative overflow-hidden" style={{ backgroundColor: color }}>
           <div className="absolute inset-0 bg-black/5 pointer-events-none"></div>
           {logo ? (
             <div className="relative">
               <img src={logo} alt="Logo" className="w-11 h-11 rounded-2xl bg-white object-contain p-1.5 shadow-sm" />
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white dark:border-slate-800 rounded-full"></div>
+              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
             </div>
           ) : (
             <div className="relative">
               <div className="w-11 h-11 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center font-black text-xl shadow-inner">{name[0]?.toUpperCase()}</div>
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white dark:border-slate-800 rounded-full"></div>
+              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
             </div>
           )}
           <div className="relative">
@@ -38,15 +38,15 @@ export function DesignPreview({ color, name, logo }: { color: string, name: stri
         </div>
 
         {/* Chat Area */}
-        <div className="p-8 bg-gray-100/50 dark:bg-slate-950/30 h-48 flex items-end">
-          <div className="bg-white dark:bg-slate-800 p-5 rounded-[24px] rounded-bl-none text-sm text-slate-800 dark:text-slate-100 max-w-[90%] shadow-md font-medium border border-gray-200 dark:border-slate-700/50 leading-relaxed animate-in fade-in dash-in duration-700 delay-300">
+        <div className="p-8 bg-gray-100/50 h-48 flex items-end">
+          <div className="bg-white p-5 rounded-[24px] rounded-bl-none text-sm text-slate-800 max-w-[90%] shadow-md font-medium border border-gray-200 leading-relaxed animate-in fade-in dash-in duration-700 delay-300">
             Hi! How can we help you today? 👋
           </div>
         </div>
 
         {/* Input Area */}
-        <div className="p-6 border-t border-[var(--border-color)] flex gap-4 bg-[var(--bg-card)]">
-          <div className="flex-1 bg-gray-100/80 dark:bg-slate-900/80 px-5 py-3 rounded-2xl text-[11px] text-[var(--text-muted)] font-bold tracking-tight">
+        <div className="p-6 border-t border-gray-100 flex gap-4 bg-white">
+          <div className="flex-1 bg-gray-100/80 px-5 py-3 rounded-2xl text-[11px] text-slate-400 font-bold tracking-tight">
             Type a message...
           </div>
           <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-white/40 shadow-sm transition-transform hover:scale-105" style={{ backgroundColor: color }}>
