@@ -27,9 +27,19 @@ export default function AdminDashboard() {
 
   const fetchWorkspaces = async () => {
     try {
-      const q = query(collection(db, "workspaces"), where("ownerId", "==", user?.uid));
-      const snap = await getDocs(q);
-      setWorkspaces(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      // Fetch owned workspaces
+      const qOwner = query(collection(db, "workspaces"), where("ownerId", "==", user?.uid));
+      const snapOwner = await getDocs(qOwner);
+      const owned = snapOwner.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      // Fetch shared workspaces where user is a member
+      const qMember = query(collection(db, "workspaces"), where("memberEmails", "array-contains", user?.email));
+      const snapMember = await getDocs(qMember);
+      const shared = snapMember.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      // Merge and remove duplicates (if any)
+      const all = [...owned, ...shared.filter(s => !owned.some(o => o.id === s.id))];
+      setWorkspaces(all);
     } finally {
       setLoading(false);
     }

@@ -19,7 +19,7 @@ import Link from "next/link";
 import { useState } from "react";
 
 export function AdminSidebar({ workspaceId, activeTab }: { workspaceId?: string, activeTab: string }) {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const router = useRouter();
   const [showLogout, setShowLogout] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -148,16 +148,16 @@ export function AdminSidebar({ workspaceId, activeTab }: { workspaceId?: string,
              onClick={() => setShowLogout(!showLogout)}
              className={cn("flex items-center gap-3 w-full text-left", isCollapsed ? "justify-center" : "")}
            >
-             <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold border-2 border-[var(--bg-card)] shadow-sm shrink-0">
-               S
+             <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold border-2 border-[var(--bg-card)] shadow-sm shrink-0 uppercase">
+               {user?.displayName?.[0] || user?.email?.[0] || 'U'}
              </div>
              {!isCollapsed && (
                <div className="flex-1 min-w-0 transition-opacity duration-300">
                  <div className="text-sm font-bold text-[var(--text-main)] truncate">
-                   Satyam Yadav
+                   {user?.displayName || user?.email?.split('@')[0]}
                  </div>
                  <div className="text-xs text-[var(--text-muted)] truncate">
-                   satyamyadav9uv@gmail.com
+                   {user?.email}
                  </div>
                </div>
              )}
