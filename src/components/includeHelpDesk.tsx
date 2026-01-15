@@ -13,7 +13,7 @@ export default function HelpDeckWidget({ user }: { user: any }) {
     };
     
     const s = document.createElement("script");
-    s.src = `${window.location.origin}/widget-loader.js`;
+    s.src = `https://help-deck-gamma.vercel.app/widget-loader.js`;
     s.async = true;
     document.head.appendChild(s);
   }, [user]);
