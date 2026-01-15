@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ImageIcon, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { compressImage } from "@/lib/image-utils";
 
 export function LogoUpload({ currentLogo, onUpload }: { currentLogo?: string, onUpload: (base64: string) => void }) {
   const [loading, setLoading] = useState(false);
@@ -13,9 +14,16 @@ export function LogoUpload({ currentLogo, onUpload }: { currentLogo?: string, on
 
     setLoading(true);
     const reader = new FileReader();
-    reader.onloadend = () => {
-      onUpload(reader.result as string);
-      setLoading(false);
+    reader.onloadend = async () => {
+      try {
+        const compressed = await compressImage(reader.result as string, 400, 400, 0.8);
+        onUpload(compressed);
+      } catch (err) {
+        console.error("Error compressing logo:", err);
+        onUpload(reader.result as string); // Fallback
+      } finally {
+        setLoading(false);
+      }
     };
     reader.readAsDataURL(file);
   };

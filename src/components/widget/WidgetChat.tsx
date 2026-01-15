@@ -5,6 +5,7 @@ import { Smile, Paperclip, Mic, Send } from "lucide-react";
 import { MessageBubble } from "@/components/common/MessageBubble";
 import { EmojiPicker } from "./EmojiPicker";
 import { cn } from "@/lib/utils";
+import { compressImage } from "@/lib/image-utils";
 
 export function WidgetChat({ messages, onSend, color }: { messages: any[], onSend: (text: string) => void, color: string }) {
   const [text, setText] = useState("");
@@ -26,8 +27,16 @@ export function WidgetChat({ messages, onSend, color }: { messages: any[], onSen
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (ev) => {
-        if (ev.target?.result) onSend(ev.target.result as string);
+      reader.onload = async (ev) => {
+        if (ev.target?.result) {
+          try {
+            const compressed = await compressImage(ev.target.result as string);
+            onSend(compressed);
+          } catch (err) {
+            console.error("Error compressing widget image:", err);
+            onSend(ev.target.result as string);
+          }
+        }
       };
       reader.readAsDataURL(file);
     }

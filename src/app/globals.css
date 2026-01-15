@@ -57,6 +57,9 @@
 }
 
 @layer base {
+  html {
+    font-size: 85%;
+  }
   body {
     @apply bg-[var(--bg-main)] text-[var(--text-main)] antialiased;
   }
