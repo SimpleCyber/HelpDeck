@@ -16,10 +16,10 @@ export function Button({
   ...props 
 }: ButtonProps) {
   const variants = {
-    primary: "btn-primary",
-    secondary: "bg-gray-100 text-gray-700 hover:bg-gray-200",
-    danger: "bg-red-50 text-red-600 hover:bg-red-100",
-    ghost: "hover:bg-gray-100 text-gray-600"
+    primary: "btn-primary shadow-lg shadow-blue-500/20",
+    secondary: "bg-[var(--bg-main)] text-[var(--text-main)] border border-[var(--border-color)] hover:bg-[var(--bg-card)]",
+    danger: "bg-red-50 dark:bg-slate-900 text-red-600 hover:bg-red-100 dark:hover:bg-slate-800 border border-red-100 dark:border-red-900/30",
+    ghost: "hover:bg-[var(--bg-main)] text-[var(--text-muted)] hover:text-blue-600"
   };
 
   return (

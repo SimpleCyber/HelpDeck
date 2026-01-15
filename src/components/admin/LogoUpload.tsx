@@ -22,11 +22,11 @@ export function LogoUpload({ currentLogo, onUpload }: { currentLogo?: string, on
 
   return (
     <div className="flex items-center gap-6">
-      <div className="w-20 h-20 bg-gray-100 rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden">
+      <div className="w-20 h-20 bg-[var(--bg-main)] rounded-2xl border-2 border-dashed border-[var(--border-color)] flex items-center justify-center overflow-hidden">
         {currentLogo ? (
           <img src={currentLogo} alt="Logo" className="w-full h-full object-contain" />
         ) : (
-          <ImageIcon className="text-gray-400" size={32} />
+          <ImageIcon className="text-[var(--text-muted)]" size={32} />
         )}
       </div>
       <div className="flex flex-col gap-2">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { ArrowRight, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function WorkspaceCard({ workspace }: { workspace: any }) {
@@ -11,24 +12,43 @@ export function WorkspaceCard({ workspace }: { workspace: any }) {
   return (
     <div 
       onClick={() => router.push(`/admin/workspace/${workspace.id}`)}
-      className="bg-white p-6 rounded-2xl border border-gray-200 hover:border-blue-500 hover:shadow-md transition-all cursor-pointer group"
+      className="bg-[var(--bg-card)] p-6 rounded-3xl border border-[var(--border-color)] hover:border-blue-200 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 cursor-pointer group relative overflow-hidden"
     >
-      <div className="flex justify-between items-start mb-4">
+      <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
+         <div className="bg-blue-50 dark:bg-blue-900/30 p-2 rounded-xl text-blue-600">
+           <ArrowRight size={18} />
+         </div>
+      </div>
+
+      <div className="flex items-start gap-4 mb-6">
         {logo ? (
-          <img src={logo} alt={workspace.name} className="w-12 h-12 rounded-xl object-contain border border-gray-100" />
+          <img src={logo} alt={workspace.name} className="w-14 h-14 rounded-2xl object-contain border border-[var(--border-color)] shadow-sm" />
         ) : (
           <div 
-            className="w-12 h-12 text-white rounded-xl flex items-center justify-center font-bold text-xl"
+            className="w-14 h-14 text-white rounded-2xl flex items-center justify-center font-black text-2xl shadow-lg transition-transform group-hover:scale-110 duration-300"
             style={{ backgroundColor: color }}
           >
             {workspace.name[0].toUpperCase()}
           </div>
         )}
+        <div className="flex-1 min-w-0 pt-1">
+          <h3 className="text-xl font-bold text-[var(--text-main)] group-hover:text-blue-600 transition-colors truncate">
+            {workspace.name}
+          </h3>
+          <p className="text-sm text-[var(--text-muted)] mt-0.5">Workspace</p>
+        </div>
       </div>
-      <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
-        {workspace.name}
-      </h3>
-      <p className="text-sm text-gray-500 mt-1">Manage chat and settings</p>
+
+      <div className="flex items-center justify-between pt-4 border-t border-[var(--border-color)]">
+        <div className="flex items-center gap-2">
+           <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+           <span className="text-xs font-semibold text-[var(--text-muted)]">Active</span>
+        </div>
+        <div className="flex items-center gap-1.5 text-xs font-bold text-blue-600">
+           <Settings size={14} />
+           <span>Settings</span>
+        </div>
+      </div>
     </div>
   );
 }

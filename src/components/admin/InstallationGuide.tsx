@@ -15,22 +15,22 @@ export function InstallationGuide({ workspaceId }: { workspaceId: string }) {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2">
+    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <section className="space-y-4">
-        <h3 className="font-bold text-lg">Basic Installation</h3>
-        <p className="text-gray-500 text-sm">Best for static sites. Asks for user details in-chat.</p>
+        <h3 className="font-black text-xl text-[var(--text-main)] tracking-tight">Basic Installation</h3>
+        <p className="text-[var(--text-muted)] text-sm font-medium">Best for static sites. Asks for user details in-chat.</p>
         <div className="relative group">
-          <pre className="bg-gray-900 text-gray-300 p-6 rounded-2xl overflow-x-auto font-mono text-[10px] leading-relaxed border border-gray-800 shadow-inner">{basic}</pre>
-          <Button variant="secondary" icon={Copy} onClick={() => copy(basic)} className="absolute top-4 right-4 bg-gray-800/50 text-gray-400">Copy</Button>
+          <pre className="bg-slate-900 text-slate-300 p-8 rounded-[32px] overflow-x-auto font-mono text-[11px] leading-relaxed border border-slate-800 shadow-2xl">{basic}</pre>
+          <Button variant="secondary" icon={Copy} onClick={() => copy(basic)} className="absolute top-6 right-6 bg-slate-800/80 text-slate-300 border-none backdrop-blur-sm hover:bg-slate-700">Copy Code</Button>
         </div>
       </section>
 
       <section className="space-y-4">
-        <h3 className="font-bold text-lg">Dynamic Identification (Recommended)</h3>
-        <p className="text-gray-500 text-sm">Pass user data from your backend. Automatically resumes chat history.</p>
+        <h3 className="font-black text-xl text-[var(--text-main)] tracking-tight">Dynamic Identification (Recommended)</h3>
+        <p className="text-[var(--text-muted)] text-sm font-medium">Pass user data from your backend. Automatically resumes chat history.</p>
         <div className="relative group">
-          <pre className="bg-gray-900 text-gray-300 p-6 rounded-2xl overflow-x-auto font-mono text-[10px] leading-relaxed border border-gray-800 shadow-inner">{advanced}</pre>
-          <Button variant="secondary" icon={Copy} onClick={() => copy(advanced)} className="absolute top-4 right-4 bg-gray-800/50 text-gray-400">Copy</Button>
+          <pre className="bg-slate-900 text-slate-300 p-8 rounded-[32px] overflow-x-auto font-mono text-[11px] leading-relaxed border border-slate-800 shadow-2xl">{advanced}</pre>
+          <Button variant="secondary" icon={Copy} onClick={() => copy(advanced)} className="absolute top-6 right-6 bg-slate-800/80 text-slate-300 border-none backdrop-blur-sm hover:bg-slate-700">Copy Code</Button>
         </div>
       </section>
     </div>
