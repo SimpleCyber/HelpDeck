@@ -102,3 +102,8 @@
   all: unset;
   background: transparent !important;
 }
+
+
+iframe {
+  border-radius: 16px;
+}
