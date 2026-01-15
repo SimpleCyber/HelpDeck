@@ -31,7 +31,9 @@ export function ConversationItem({ conv, active, onClick }: { conv: any, active:
         <div className="flex justify-between items-center mb-1 gap-2">
           <div className="flex items-center gap-2 min-w-0">
             {conv.unreadCount > 0 && (
-              <div className="w-2 h-2 bg-blue-600 rounded-full shadow-[0_0_8px_rgba(37,99,235,0.5)] shrink-0 animate-pulse" />
+              <div className="min-w-[18px] h-[18px] bg-blue-600 rounded-md shadow-lg shadow-blue-500/20 shrink-0 flex items-center justify-center px-1">
+                <span className="text-[10px] font-black text-white leading-none">{conv.unreadCount}</span>
+              </div>
             )}
             <h3 className={cn("font-black text-sm truncate tracking-tight", active ? "text-blue-600" : "text-[var(--text-main)]")}>
               {conv.userName}
