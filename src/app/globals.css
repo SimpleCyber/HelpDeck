@@ -108,6 +108,9 @@ body {
 .helpdeck-widget body {
   all: unset;
   background: transparent !important;
+  overflow: hidden !important;
+  width: 100vw;
+  height: 100vh;
 }
 
 
