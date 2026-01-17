@@ -105,20 +105,20 @@ body {
 }
 
 
+
 .helpdeck-widget body {
   all: unset;
   background: transparent !important;
   overflow: hidden !important;
-  width: 100%;
-  height: 100%;
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
+  width: 100vw;
+  height: 100vh;
 }
 
-.helpdeck-widget {
-  border-radius: 0 !important;
+
+iframe, .helpdeck-widget {
+  border-radius: 16px;
 }
+
 
 
 
