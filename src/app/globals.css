@@ -109,13 +109,15 @@ body {
   all: unset;
   background: transparent !important;
   overflow: hidden !important;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
 }
 
-
-iframe, .helpdeck-widget {
-  border-radius: 16px;
+.helpdeck-widget {
+  border-radius: 0 !important;
 }
 
 
