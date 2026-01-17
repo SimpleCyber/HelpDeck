@@ -46,8 +46,8 @@
   /* -------------------------------------------------- */
 const applyBubble = () => {
   iframe.dataset.state = "bubble";
-  iframe.style.width = "60px";
-  iframe.style.height = "60px";
+  iframe.style.width = "80px";
+  iframe.style.height = "80px";
   iframe.style.borderRadius = "9999px";
 
   // 🔴 THIS IS THE KEY LINE
