@@ -29,7 +29,7 @@ export default function AdminChat() {
     if (!authL && !user) router.push("/admin");
     if (workspaceId) {
       getDoc(doc(db, "workspaces", workspaceId)).then(s => setWs(s.data()));
-      return onSnapshot(query(collection(db, "workspaces", workspaceId, "conversations"), orderBy("createdAt", "desc")), s => setConvs(s.docs.map(d => ({ id: d.id, ...d.data() }))));
+      return onSnapshot(query(collection(db, "workspaces", workspaceId, "conversations"), orderBy("lastUpdatedAt", "desc")), s => setConvs(s.docs.map(d => ({ id: d.id, ...d.data() }))));
     }
   }, [workspaceId, user, authL, router]);
 
@@ -162,7 +162,27 @@ export default function AdminChat() {
 
                   <div ref={scrollRef} className="flex-1 overflow-y-auto p-10 space-y-8 scroll-smooth">
                     <div className="flex flex-col gap-6">
-                      {msgs.map(m => <MessageBubble key={m.id} message={m} color={ws?.settings?.color || "#3b82f6"} />)}
+                      {msgs.map((m, i) => {
+                        const prevM = msgs[i - 1];
+                        const isNewDay = !prevM || (
+                          m.createdAt?.toDate?.().toDateString() !== prevM.createdAt?.toDate?.().toDateString()
+                        );
+
+                        return (
+                          <div key={m.id} className="flex flex-col gap-6">
+                            {isNewDay && (
+                              <div className="flex justify-center my-4">
+                                <div className="bg-[var(--bg-card)] border border-[var(--border-color)] px-3 py-1 rounded-full text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider shadow-sm">
+                                  {m.createdAt?.toDate 
+                                    ? m.createdAt.toDate().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })
+                                    : 'Today'}
+                                </div>
+                              </div>
+                            )}
+                            <MessageBubble message={m} color={ws?.settings?.color || "#3b82f6"} />
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 

@@ -1,5 +1,7 @@
 "use client";
 
+import React, { useState, useEffect } from "react";
+
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
 import { 
@@ -21,7 +23,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { CreateWorkspaceModal } from "@/components/admin/CreateWorkspaceModal";
@@ -29,14 +31,15 @@ import { DeleteWorkspaceModal } from "@/components/admin/DeleteWorkspaceModal";
 import { useTheme } from "@/lib/theme-context";
 import { doc } from "firebase/firestore";
 import { Trash2, Sun, Moon, MoreVertical } from "lucide-react";
+import { HelpDeckLogo } from "@/components/common/HelpDeckLogo";
 
 export function AdminSidebar({ workspaceId, activeTab }: { workspaceId?: string, activeTab: string }) {
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const router = useRouter();
-  const [showLogout, setShowLogout] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   
   // Workspace Switcher State
   const [workspaces, setWorkspaces] = useState<any[]>([]);
@@ -46,6 +49,21 @@ export function AdminSidebar({ workspaceId, activeTab }: { workspaceId?: string,
   // Deletion State
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [wsToDelete, setWsToDelete] = useState<any>(null); // Store full workspace object
+
+  // Refs for click outside
+  const userMenuRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -125,19 +143,12 @@ export function AdminSidebar({ workspaceId, activeTab }: { workspaceId?: string,
       </button>
 
       {/* Header / Logo */}
-      <div className={cn("p-6 pb-2 transition-all duration-300 flex items-center justify-between", isCollapsed ? "px-6 flex-col gap-4" : "px-8")}>
+      <div className={cn("p-6 pb-2 transition-all duration-300 flex items-center justify-between", isCollapsed ? "px-0 justify-center" : "px-8")}>
         <Link href="/admin/dashboard" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 bg-black dark:bg-white rounded-xl flex items-center justify-center text-white dark:text-black shadow-lg shrink-0 transition-transform group-hover:scale-105 duration-300">
-            <LifeBuoy size={20} className="animate-spin-slow" />
-          </div>
-          {!isCollapsed && (
-            <span className="text-xl font-black text-[var(--text-main)] tracking-tight transition-opacity duration-300">
-              HelpDeck
-            </span>
-          )}
+          <HelpDeckLogo className="w-10 h-10" textClassName={cn("text-xl transition-opacity duration-300", isCollapsed ? "opacity-0 w-0 hidden" : "opacity-100")} />
         </Link>
         
-        {/* Theme Toggle in Header */}
+        {/* Theme Toggle in Header - Hide when collapsed to save space or keep it if desired. Requirement said only logo. */ }
         {!isCollapsed && (
            <button 
              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -158,12 +169,24 @@ export function AdminSidebar({ workspaceId, activeTab }: { workspaceId?: string,
              <div className="flex items-center gap-3 overflow-hidden">
                {currentWs ? (
                  <>
-                   <div 
-                    className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-md shrink-0"
-                    style={{ backgroundColor: currentWs.settings?.color || '#3b82f6' }}
-                   >
-                     {currentWs.name[0].toUpperCase()}
-                   </div>
+                   {currentWs.settings?.logo ? (
+                      <img src={currentWs.settings.logo} alt={currentWs.name} className="w-8 h-8 rounded-lg object-contain bg-white border border-[var(--border-color)] text-[var(--text-muted)] shrink-0" />
+                   ) : currentWs.name.toLowerCase() === 'help deck' ? (
+                     <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center shrink-0">
+                        <span className="text-white font-black text-xs">HD</span>
+                     </div>
+                   ) : currentWs.name.toLowerCase() === 'pledgechat' ? (
+                      <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shrink-0">
+                        <span className="text-white font-black text-xs">PC</span>
+                      </div>
+                   ) : (
+                     <div 
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-md shrink-0"
+                      style={{ backgroundColor: currentWs.settings?.color || '#3b82f6' }}
+                     >
+                       {currentWs.name[0].toUpperCase()}
+                     </div>
+                   )}
                    <div className="flex flex-col items-start min-w-0">
                       <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Workspace</span>
                       <span className="text-sm font-black text-[var(--text-main)] truncate w-full">{currentWs.name}</span>
@@ -198,12 +221,24 @@ export function AdminSidebar({ workspaceId, activeTab }: { workspaceId?: string,
                     onClick={() => { setShowWsSwitcher(false); router.push(`/admin/chat/${ws.id}`); }}
                     className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-[var(--bg-main)] transition-colors text-left group/item relative"
                  >
-                    <div 
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-sm shrink-0"
-                      style={{ backgroundColor: ws.settings?.color || '#3b82f6' }}
-                    >
-                      {ws.name[0].toUpperCase()}
-                    </div>
+                     {ws.settings?.logo ? (
+                        <img src={ws.settings.logo} alt={ws.name} className="w-8 h-8 rounded-lg object-contain bg-white border border-[var(--border-color)] shrink-0" />
+                     ) : ws.name.toLowerCase() === 'help deck' ? (
+                        <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center shrink-0">
+                           <span className="text-white font-black text-xs">HD</span>
+                        </div>
+                     ) : ws.name.toLowerCase() === 'pledgechat' ? (
+                        <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shrink-0">
+                           <span className="text-white font-black text-xs">PC</span>
+                        </div>
+                     ) : (
+                       <div 
+                         className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-sm shrink-0"
+                         style={{ backgroundColor: ws.settings?.color || '#3b82f6' }}
+                       >
+                         {ws.name[0].toUpperCase()}
+                       </div>
+                     )}
                     <div className="min-w-0 flex-1">
                       <div className="text-sm font-bold text-[var(--text-main)] truncate">{ws.name}</div>
                       <div className="text-[10px] text-[var(--text-muted)] truncate">{ws.id === workspaceId && "Current"}</div>
@@ -258,7 +293,7 @@ export function AdminSidebar({ workspaceId, activeTab }: { workspaceId?: string,
       )}
 
       {/* Navigation */}
-      <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+      <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto overflow-x-hidden no-scrollbar">
         {navItems.map((item) => (
           <button 
             key={item.id}
@@ -292,17 +327,25 @@ export function AdminSidebar({ workspaceId, activeTab }: { workspaceId?: string,
       </nav>
 
       {/* User Profile */}
-      <div className="p-4 mt-auto">
+      <div className="p-4 mt-auto relative" ref={userMenuRef}>
         <div className={cn(
-          "bg-[var(--bg-main)] rounded-[20px] transition-all duration-300 overflow-hidden border border-[var(--border-color)]",
-          isCollapsed ? "p-1.5" : "p-2"
+          "transition-all duration-300",
+          !isCollapsed && "bg-[var(--bg-main)] rounded-[20px] border border-[var(--border-color)] p-2",
+          isCollapsed && "flex justify-center"
         )}>
            <button 
-             onClick={() => setShowLogout(!showLogout)}
-             className={cn("flex items-center gap-3 w-full text-left p-2 rounded-xl hover:bg-[var(--bg-card)] transition-colors", isCollapsed ? "justify-center" : "")}
+             onClick={() => setShowUserMenu(!showUserMenu)}
+             className={cn("flex items-center gap-3 w-full text-left rounded-xl transition-colors", 
+               !isCollapsed && "hover:bg-[var(--bg-card)] p-2",
+               isCollapsed && "justify-center grayscale hover:grayscale-0"
+             )}
            >
-             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-blue-600 font-bold border-2 border-white dark:border-black shadow-sm shrink-0 uppercase text-lg">
-               {user?.displayName?.[0] || user?.email?.[0] || 'U'}
+             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-blue-600 font-bold border-2 border-white dark:border-black shadow-sm shrink-0 uppercase text-lg overflow-hidden">
+               {user?.photoURL ? (
+                 <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover" />
+               ) : (
+                 user?.displayName?.[0] || user?.email?.[0] || 'U'
+               )}
              </div>
              {!isCollapsed && (
                <div className="flex-1 min-w-0 transition-opacity duration-300">
@@ -315,28 +358,36 @@ export function AdminSidebar({ workspaceId, activeTab }: { workspaceId?: string,
                </div>
              )}
              {!isCollapsed && (
-               showLogout ? <ChevronDown size={14} className="text-[var(--text-muted)]" /> : <ChevronUp size={14} className="text-[var(--text-muted)]" />
+               <MoreVertical size={16} className="text-[var(--text-muted)]" />
              )}
            </button>
-           
-           <div 
-             className={cn(
-               "transition-all duration-300 ease-in-out overflow-hidden px-2",
-               showLogout ? "max-h-20 mt-2 opacity-100" : "max-h-0 opacity-0"
-             )}
-           >
-             <button 
-              onClick={logout}
-              className={cn(
-                "flex items-center gap-3 w-full px-3 py-2.5 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl font-bold transition-colors mb-2",
-                isCollapsed ? "justify-center" : ""
-              )}
-            >
-              <LogOut size={16} className="shrink-0" />
-              {!isCollapsed && <span className="whitespace-nowrap">Sign Out</span>}
-            </button>
-           </div>
         </div>
+
+        {/* User Popup Menu */}
+        {showUserMenu && (
+           <div className={cn(
+             "absolute bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl shadow-2xl p-2 z-50 animate-in duration-200",
+             isCollapsed 
+               ? "left-full bottom-4 ml-4 w-64 slide-in-from-left-2" 
+               : "bottom-full left-0 right-0 mb-2 slide-in-from-bottom-2"
+           )}>
+              <div className="px-3 py-2 border-b border-[var(--border-color)] mb-1">
+                 <div className="text-sm font-black text-[var(--text-main)] truncate">
+                   {user?.displayName || 'User'}
+                 </div>
+                 <div className="text-xs text-[var(--text-muted)] truncate">
+                   {user?.email}
+                 </div>
+              </div>
+              <button 
+                onClick={logout}
+                className="flex items-center gap-3 w-full px-3 py-2.5 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl font-bold transition-colors"
+                >
+               <LogOut size={16} className="shrink-0" />
+               <span className="whitespace-nowrap">Sign Out</span>
+             </button>
+           </div>
+        )}
       </div>
     </div>
   );

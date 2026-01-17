@@ -31,6 +31,14 @@ export function WorkspaceCard({ workspace }: { workspace: any }) {
       <div className="flex items-start gap-4 mb-6">
         {logo ? (
           <img src={logo} alt={workspace.name} className="w-14 h-14 rounded-2xl object-contain border border-[var(--border-color)] shadow-sm bg-white" />
+        ) : workspace.name.toLowerCase() === 'help deck' ? (
+           <div className="w-14 h-14 bg-black rounded-2xl flex items-center justify-center border border-white/10 shadow-lg shrink-0">
+              <span className="text-white font-black text-xl">HD</span>
+           </div>
+        ) : workspace.name.toLowerCase() === 'pledgechat' ? (
+           <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center border border-white/10 shadow-lg shrink-0">
+              <span className="text-white font-black text-xl">PC</span>
+           </div>
         ) : (
           <div 
             className="w-14 h-14 text-white rounded-2xl flex items-center justify-center font-black text-2xl shadow-lg transition-transform group-hover:scale-105 duration-300"

@@ -2,7 +2,7 @@ html,
 body {
   width: 100%;
   height: 100%;
-  overflow: hidden;
+  /* overflow: hidden; Removed to allow scrolling */
 }
 
 
@@ -15,24 +15,22 @@ body {
 
 :root {
   /* Colors */
-  --primary: #2563eb;
+  --primary: #2563eb; /* Royal Blue */
   --primary-hover: #1d4ed8;
-  --bg-main: #f8fafc;
+  --bg-main: #f8fafc; /* Slate-50 */
   --bg-card: #ffffff;
-  --bg-sidebar: #ffffff;
-  --text-main: #0f172a;
-  --text-muted: #64748b;
-  --border-color: #e2e8f0;
+  --text-main: #0f172a; /* Slate-900 */
+  --text-muted: #64748b; /* Slate-500 */
+  --border-color: #e2e8f0; /* Slate-200 */
   --input-bg: #f8fafc;
   
-  /* Premium Utilities */
-  --accent-gradient: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
-  --shadow-premium: 0 10px 25px -5px rgba(0, 0, 0, 0.04), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+  /* Brand Gradients */
+  --brand-gradient: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%); /* Blue to Indigo */
   
   /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.05);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.05);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08); /* Slightly stronger */
   
   /* Radii */
   --radius-xl: 1rem;
@@ -41,26 +39,26 @@ body {
 
 /* Dark Mode - Premium Slate Theme */
 .dark, [data-theme='dark'] {
-  --bg-main: #020617;
-  --bg-card: #0f172a;
-  --bg-sidebar: #020617;
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --border-color: #1e293b;
-  --input-bg: #0f172a;
+  --bg-main: #0B1120; /* Darker, richer background */
+  --bg-card: #1E293B; /* Lighter than main for depth */
+  --bg-sidebar: #0F172A; /* Slate-900 */
+  --text-main: #F1F5F9;
+  --text-muted: #94A3B8;
+  --border-color: #334155;
+  --input-bg: #1E293B;
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.5);
   --shadow-premium: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --bg-main: #020617;
-    --bg-card: #0f172a;
-    --bg-sidebar: #020617;
-    --text-main: #f8fafc;
-    --text-muted: #94a3b8;
-    --border-color: #1e293b;
-    --input-bg: #0f172a;
+    --bg-main: #0B1120;
+    --bg-card: #1E293B;
+    --bg-sidebar: #0F172A;
+    --text-main: #F1F5F9;
+    --text-muted: #94A3B8;
+    --border-color: #334155;
+    --input-bg: #1E293B;
     --shadow-premium: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
   }
 }

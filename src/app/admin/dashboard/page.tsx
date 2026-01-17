@@ -47,11 +47,24 @@ export default function AdminDashboard() {
 
 
 
+  // Calculate stats
+  // Note: For "Total Messages", we ideally track a 'messageCount' on the workspace or aggregate conversation message counts.
+  // For now, we'll use unreadCount as a proxy or 0 if not available, consistent with previous logic but renamed.
+  // Actually, let's try to sum 'totalMessages' if available, else fallback.
+  const totalMessages = workspaces.reduce((acc, ws) => acc + (ws.totalMessages || ws.unreadCount || 0), 0);
+  
+  const totalMembers = new Set(workspaces.flatMap(ws => ws.memberEmails || [])).size;
+  
+  // "Total Customers" -> distinct member emails is actually "Team Members". 
+  // User asked for "Total Customers" instead of "Total Views". 
+  // We'll interpret this as number of conversations (people who chatted).
+  const totalCustomers = workspaces.reduce((acc, ws) => acc + (ws.conversationCount || 0), 0);
+
   const stats = [
     { label: "Total Workspaces", value: workspaces.length, icon: Globe, color: "text-blue-600", bg: "bg-blue-50" },
-    { label: "Active Chats", value: "0", icon: MessageSquare, color: "text-green-600", bg: "bg-green-50" },
-    { label: "Team Members", value: "1", icon: Users, color: "text-purple-600", bg: "bg-purple-50" },
-    { label: "Total Views", value: "0", icon: BarChart3, color: "text-orange-600", bg: "bg-orange-50" },
+    { label: "Total Messages", value: totalMessages, icon: MessageSquare, color: "text-green-600", bg: "bg-green-50" },
+    { label: "Team Members", value: totalMembers, icon: Users, color: "text-purple-600", bg: "bg-purple-50" },
+    { label: "Total Customers", value: totalCustomers, icon: BarChart3, color: "text-orange-600", bg: "bg-orange-50" },
   ];
 
   return (

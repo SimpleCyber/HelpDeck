@@ -2,7 +2,7 @@ import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'outline';
   icon?: LucideIcon;
   loading?: boolean;
 }
@@ -19,7 +19,8 @@ export function Button({
     primary: "btn-primary shadow-lg shadow-blue-500/20",
     secondary: "bg-[var(--bg-main)] text-[var(--text-main)] border border-[var(--border-color)] hover:bg-[var(--bg-card)]",
     danger: "bg-red-50 dark:bg-slate-900 text-red-600 hover:bg-red-100 dark:hover:bg-slate-800 border border-red-100 dark:border-red-900/30",
-    ghost: "hover:bg-[var(--bg-main)] text-[var(--text-muted)] hover:text-blue-600"
+    ghost: "hover:bg-[var(--bg-main)] text-[var(--text-muted)] hover:text-blue-600",
+    outline: "bg-transparent border border-[var(--border-color)] text-[var(--text-main)] hover:bg-[var(--bg-main)]"
   };
 
   return (

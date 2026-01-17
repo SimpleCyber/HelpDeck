@@ -28,18 +28,18 @@ export function ConversationItem({ conv, active, onClick }: { conv: any, active:
       </div>
 
       <div className="flex-1 min-w-0 flex flex-col justify-center">
-        <div className="flex justify-between items-center mb-1 gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-            {conv.unreadCount > 0 && (
+        <div className="flex justify-between items-start mb-1 gap-2">
+          <h3 className={cn("font-black text-sm truncate tracking-tight flex-1", active ? "text-blue-600" : "text-[var(--text-main)]")}>
+            {conv.userName}
+          </h3>
+          <div className="flex flex-col items-end gap-1">
+            <span className="text-[10px] font-bold text-[var(--text-muted)] opacity-60 uppercase shrink-0">{time}</span>
+            {conv.unreadCountAdmin > 0 && (
               <div className="min-w-[18px] h-[18px] bg-blue-600 rounded-md shadow-lg shadow-blue-500/20 shrink-0 flex items-center justify-center px-1">
-                <span className="text-[10px] font-black text-white leading-none">{conv.unreadCount}</span>
+                <span className="text-[10px] font-black text-white leading-none">{Math.max(0, conv.unreadCountAdmin)}</span>
               </div>
             )}
-            <h3 className={cn("font-black text-sm truncate tracking-tight", active ? "text-blue-600" : "text-[var(--text-main)]")}>
-              {conv.userName}
-            </h3>
           </div>
-          <span className="text-[10px] font-bold text-[var(--text-muted)] opacity-60 uppercase shrink-0">{time}</span>
         </div>
         <p className={cn("text-xs truncate font-medium", active ? "text-[var(--text-main)]" : "text-[var(--text-muted)]")}>
           {conv.lastMessage || "Started a conversation"}
