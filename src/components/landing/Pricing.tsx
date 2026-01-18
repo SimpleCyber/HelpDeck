@@ -19,7 +19,7 @@ export function Pricing() {
         </div>
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {plans.map((p, i) => (
-            <div key={i} className={`card p-10 flex flex-col ${p.name === 'Pro' ? 'bg-gray-900 text-white' : ''}`}>
+            <div key={i} className={`card p-10 flex flex-col ${p.name === 'Pro' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-900 border-gray-200'}`}>
               <h3 className="text-xl font-bold mb-1">{p.name}</h3>
               <div className="flex items-baseline gap-1 mb-8">
                 <span className="text-4xl font-black">${p.price}</span>

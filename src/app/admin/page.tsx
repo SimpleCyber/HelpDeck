@@ -34,10 +34,10 @@ export default function AdminPage() {
     }
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-[var(--bg-main)]"><div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-[var(--primary)]" /></div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-slate-50"><div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-600" /></div>;
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2 bg-[var(--bg-main)]">
+    <div className="min-h-screen grid lg:grid-cols-2 bg-slate-50">
       {/* Visual Side */}
       <div className="hidden lg:flex flex-col justify-between p-12 bg-black text-white relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop')] bg-cover bg-center opacity-40 blur-sm" />
@@ -57,7 +57,7 @@ export default function AdminPage() {
         </div>
 
         <div className="relative z-10 flex items-center gap-4 text-sm font-medium text-gray-400">
-           <span>© 2024 HelpDeck Inc.</span>
+           <span>©  2026 HelpDeck Inc.</span>
            <div className="w-1 h-1 rounded-full bg-gray-600" />
            <span>Privacy Policy</span>
            <div className="w-1 h-1 rounded-full bg-gray-600" />
@@ -72,10 +72,10 @@ export default function AdminPage() {
              <div className="lg:hidden flex justify-center mb-6">
                <HelpDeckLogo className="w-12 h-12" textClassName="text-2xl" />
              </div>
-             <h2 className="text-3xl font-black text-[var(--text-main)] tracking-tight">
+             <h2 className="text-3xl font-black text-slate-900 tracking-tight">
                {isLogin ? "Welcome back" : "Create an account"}
              </h2>
-             <p className="text-[var(--text-muted)] font-medium">
+             <p className="text-slate-500 font-medium">
                {isLogin ? "Enter your details to access your workspace." : "Start your 14-day free trial today."}
              </p>
            </div>
@@ -83,25 +83,25 @@ export default function AdminPage() {
            <form onSubmit={handleSubmit} className="space-y-5">
              <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-[var(--text-main)] ml-1">Email</label>
+                  <label className="text-sm font-bold text-slate-900 ml-1">Email</label>
                   <Input 
                     type="email" 
                     placeholder="name@company.com" 
                     value={email} 
                     onChange={e => setEmail(e.target.value)} 
                     required 
-                    className="h-12 bg-white dark:bg-black/10 border-gray-200 dark:border-gray-800 focus:border-black dark:focus:border-white transition-all rounded-xl"
+                    className="h-12 bg-white border-slate-200 focus:border-black transition-all rounded-xl placeholder:text-gray-400"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-[var(--text-main)] ml-1">Password</label>
+                  <label className="text-sm font-bold text-slate-900 ml-1">Password</label>
                   <Input 
                     type="password" 
                     placeholder="••••••••" 
                     value={password} 
                     onChange={e => setPassword(e.target.value)} 
                     required 
-                    className="h-12 bg-white dark:bg-black/10 border-gray-200 dark:border-gray-800 focus:border-black dark:focus:border-white transition-all rounded-xl"
+                    className="h-12 bg-white border-slate-200 focus:border-black transition-all rounded-xl placeholder:text-gray-400"
                   />
                 </div>
              </div>
@@ -123,9 +123,9 @@ export default function AdminPage() {
            </form>
 
            <div className="relative">
-             <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-[var(--border-color)]"></div></div>
-             <div className="relative flex justify-center text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">
-               <span className="px-4 bg-[var(--bg-main)]">Or continue with</span>
+             <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200"></div></div>
+             <div className="relative flex justify-center text-xs font-bold uppercase tracking-widest text-slate-500">
+               <span className="px-4 bg-slate-50">Or continue with</span>
              </div>
            </div>
 
@@ -133,18 +133,18 @@ export default function AdminPage() {
              type="button"
              variant="outline" 
              onClick={signInWithGoogle} 
-             className="w-full h-12 text-base font-bold bg-white dark:bg-transparent border border-[var(--border-color)] hover:bg-gray-50 flex items-center justify-center gap-3 rounded-xl transition-all"
+             className="w-full h-12 text-base font-bold bg-white border border-slate-200 hover:bg-gray-50 flex items-center justify-center gap-3 rounded-xl transition-all text-slate-900"
            >
              <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5" />
-             Google
+             Sign in with Google
            </Button>
 
-           <p className="text-center text-sm font-medium text-[var(--text-muted)]">
+           <p className="text-center text-sm font-medium text-slate-500">
              {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
              <button
                type="button"
                onClick={() => setIsLogin(!isLogin)}
-               className="font-bold text-black dark:text-white underline underline-offset-4 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+               className="font-bold text-black underline underline-offset-4 hover:text-gray-600 transition-colors"
              >
                {isLogin ? "Sign up" : "Log in"}
              </button>
