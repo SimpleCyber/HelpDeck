@@ -146,6 +146,11 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
     );
     localStorage.setItem(`crisp_conv_${workspaceId}`, r.id);
     setConvId(r.id);
+    
+    // Update workspace counts
+    await updateDoc(doc(db, "workspaces", workspaceId), {
+      conversationCount: increment(1)
+    });
   };
 
   if (loading) return null;
@@ -220,9 +225,10 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
                     lastUpdatedAt: serverTimestamp()
                   });
 
-                  // Update workspace total unread
+                  // Update workspace total unread and lifetime messages
                   await updateDoc(doc(db, "workspaces", workspaceId), {
-                    unreadCount: increment(1)
+                    unreadCount: increment(1),
+                    totalMessages: increment(1)
                   });
                 }}
                 color={color}

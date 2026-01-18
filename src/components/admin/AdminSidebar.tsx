@@ -24,7 +24,7 @@ import {
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { CreateWorkspaceModal } from "@/components/admin/CreateWorkspaceModal";
 import { DeleteWorkspaceModal } from "@/components/admin/DeleteWorkspaceModal";
@@ -66,25 +66,36 @@ export function AdminSidebar({ workspaceId, activeTab }: { workspaceId?: string,
   }, []);
 
   useEffect(() => {
-    if (user) {
-      const fetchWorkspaces = async () => {
-        // Fetch owned
-        const qOwner = query(collection(db, "workspaces"), where("ownerId", "==", user.uid));
-        const snapOwner = await getDocs(qOwner);
-        const owned = snapOwner.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    if (!user) return;
 
-        // Fetch shared
-        const qMember = query(collection(db, "workspaces"), where("memberEmails", "array-contains", user.email));
-        const snapMember = await getDocs(qMember);
-        const shared = snapMember.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // Fetch owned
+    const qOwner = query(collection(db, "workspaces"), where("ownerId", "==", user.uid));
+    // Fetch shared
+    const qMember = query(collection(db, "workspaces"), where("memberEmails", "array-contains", user.email));
 
-        // Merge and remove duplicates
-        const all = [...owned, ...shared.filter(s => !owned.some(o => o.id === s.id))];
-        setWorkspaces(all);
-      };
-      fetchWorkspaces();
-    }
-  }, [user, showCreateModal]); // Refresh list when modal closes (created)
+    let ownedWs: any[] = [];
+    let sharedWs: any[] = [];
+
+    const updateAllVisibility = () => {
+      const all = [...ownedWs, ...sharedWs.filter(s => !ownedWs.some(o => o.id === s.id))];
+      setWorkspaces(all);
+    };
+
+    const unsubOwner = onSnapshot(qOwner, (snap) => {
+      ownedWs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      updateAllVisibility();
+    });
+
+    const unsubMember = onSnapshot(qMember, (snap) => {
+      sharedWs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      updateAllVisibility();
+    });
+
+    return () => {
+      unsubOwner();
+      unsubMember();
+    };
+  }, [user]); // Refresh list only when user context changes
 
   const handleDeleteClick = (e: React.MouseEvent, ws: any) => {
     e.stopPropagation();

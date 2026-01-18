@@ -85,6 +85,11 @@ export default function AdminChat() {
       lastUpdatedAt: serverTimestamp(),
       unreadCountUser: increment(1)
     });
+
+    // Update workspace total messages
+    await updateDoc(doc(db, "workspaces", workspaceId), {
+      totalMessages: increment(1)
+    });
   };
 
 
