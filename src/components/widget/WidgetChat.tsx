@@ -21,11 +21,12 @@ export function WidgetChat({ messages, onSend, color }: { messages: any[], onSen
       }
     };
     
-    // Scroll immediately
-    scrollToBottom();
-    // Also scroll after a tiny delay to ensure layout is complete
-    const timer = setTimeout(scrollToBottom, 50);
-    return () => clearTimeout(timer);
+    // Scroll after layout is painted
+    requestAnimationFrame(() => {
+      scrollToBottom();
+      // Second pass for safety (handles images or slow renders)
+      setTimeout(scrollToBottom, 100);
+    });
   }, [messages]);
 
   const handleSubmit = (e: React.FormEvent) => {
