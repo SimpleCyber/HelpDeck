@@ -1,4 +1,4 @@
-import { User, Check, AlertCircle } from "lucide-react";
+import { User, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function ConversationItem({ conv, active, onClick }: { conv: any, active: boolean, onClick: () => void }) {
@@ -41,7 +41,7 @@ export function ConversationItem({ conv, active, onClick }: { conv: any, active:
                 </div>
               ) : (
                 <div className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center shadow-sm shrink-0">
-                  <AlertCircle size={9} strokeWidth={5} className="text-white" />
+                  <X size={9} strokeWidth={5} className="text-white" />
                 </div>
               )}
               {conv.unreadCountAdmin > 0 && (
@@ -52,7 +52,7 @@ export function ConversationItem({ conv, active, onClick }: { conv: any, active:
             </div>
           </div>
         </div>
-        <p className={cn("text-xs truncate font-medium -mt-3", active ? "text-[var(--text-main)]" : "text-[var(--text-muted)]")}>
+        <p className={cn("text-xs truncate font-medium -mt-4", active ? "text-[var(--text-main)]" : "text-[var(--text-muted)]")}>
           {conv.lastMessage || "Started a conversation"}
         </p>
       </div>

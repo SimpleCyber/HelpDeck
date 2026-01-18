@@ -149,7 +149,8 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
     
     // Update workspace counts
     await updateDoc(doc(db, "workspaces", workspaceId), {
-      conversationCount: increment(1)
+      conversationCount: increment(1),
+      unresolvedCount: increment(1)
     });
   };
 
@@ -202,6 +203,10 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
               <WidgetChat
                 messages={msgs}
                 onSend={async (text) => {
+                  const convRef = doc(db, "workspaces", workspaceId, "conversations", convId!);
+                  const convSnap = await getDoc(convRef);
+                  const oldStatus = convSnap.data()?.status;
+
                   await addDoc(
                     collection(
                       db,
@@ -219,18 +224,30 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
                   );
 
                   // Update counts and status
-                  await updateDoc(doc(db, "workspaces", workspaceId, "conversations", convId!), {
-                    unreadCountAdmin: increment(1),
-                    lastMessage: text,
-                    lastUpdatedAt: serverTimestamp(),
-                    status: "unresolved"
-                  });
+                  const isImage = text.startsWith("data:image");
+                  const displayMessage = isImage ? "📷 Image" : text;
 
-                  // Update workspace total unread and lifetime messages
-                  await updateDoc(doc(db, "workspaces", workspaceId), {
+                  const updates: any = {
+                    unreadCountAdmin: increment(1),
+                    lastMessage: displayMessage,
+                    lastUpdatedAt: serverTimestamp(),
+                    status: "unresolved",
+                  };
+
+                  const wsUpdates: any = {
                     unreadCount: increment(1),
                     totalMessages: increment(1)
-                  });
+                  };
+
+                  // If it was resolved, increment the workspace's unresolvedCount
+                  if (oldStatus === "resolved") {
+                    wsUpdates.unresolvedCount = increment(1);
+                  }
+
+                  await Promise.all([
+                    updateDoc(convRef, updates),
+                    updateDoc(doc(db, "workspaces", workspaceId), wsUpdates)
+                  ]);
                 }}
                 color={color}
               />

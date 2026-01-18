@@ -3,7 +3,7 @@
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Plus, Loader2, Users, MessageSquare, BarChart3, Globe, X } from "lucide-react";
+import { Plus, Loader2, Users, X, BarChart3, Globe } from "lucide-react";
 import { collection, query, where, onSnapshot, addDoc, serverTimestamp, getDocs, updateDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
@@ -30,14 +30,19 @@ export default function AdminDashboard() {
         const conversationCount = convsSnap.size;
         
         let totalMessages = 0;
+        let unresolvedCount = 0;
         for (const convDoc of convsSnap.docs) {
           const msgsSnap = await getDocs(collection(db, "workspaces", ws.id, "conversations", convDoc.id, "messages"));
           totalMessages += msgsSnap.size;
+          if (convDoc.data().status === "unresolved") {
+            unresolvedCount++;
+          }
         }
 
         await updateDoc(doc(db, "workspaces", ws.id), {
           totalMessages,
-          conversationCount
+          conversationCount,
+          unresolvedCount
         });
       }
     } catch (err) {
@@ -91,7 +96,7 @@ export default function AdminDashboard() {
 
 
   // Calculate stats
-  const totalMessages = workspaces.reduce((acc, ws) => acc + Math.max(0, ws.totalMessages || ws.unreadCount || 0), 0);
+  const unresolvedQueries = workspaces.reduce((acc, ws) => acc + Math.max(0, ws.unresolvedCount || 0), 0);
   
   const totalMembers = new Set(workspaces.flatMap(ws => ws.memberEmails || [])).size;
   
@@ -99,9 +104,10 @@ export default function AdminDashboard() {
 
   const stats = [
     { label: "Total Workspaces", value: workspaces.length, icon: Globe, color: "text-blue-600", bg: "bg-blue-50" },
-    { label: "Total Messages", value: totalMessages, icon: MessageSquare, color: "text-green-600", bg: "bg-green-50" },
     { label: "Team Members", value: totalMembers, icon: Users, color: "text-purple-600", bg: "bg-purple-50" },
     { label: "Total Customers", value: totalCustomers, icon: BarChart3, color: "text-orange-600", bg: "bg-orange-50" },
+    { label: "Unresolved Queries", value: unresolvedQueries, icon: X, color: "text-red-600", bg: "bg-red-50" },
+
   ];
 
   return (

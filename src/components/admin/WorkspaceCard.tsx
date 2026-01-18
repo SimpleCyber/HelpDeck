@@ -14,12 +14,6 @@ export function WorkspaceCard({ workspace }: { workspace: any }) {
       onClick={() => router.push(`/admin/chat/${workspace.id}`)}
       className="bg-[var(--bg-card)] p-6 rounded-3xl border border-[var(--border-color)] hover:border-blue-300 dark:hover:border-blue-500/30 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300 cursor-pointer group relative overflow-hidden"
     >
-      <div className="absolute top-0 right-0 p-5 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
-         <div className="bg-blue-600 p-2.5 rounded-xl text-white shadow-lg shadow-blue-500/20">
-           <MessageSquare size={18} />
-         </div>
-      </div>
-      
       {workspace.unreadCount > 0 && (
          <div className="absolute top-5 right-5 z-10">
             <div className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full border-2 border-[var(--bg-card)] shadow-sm animate-in zoom-in">

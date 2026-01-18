@@ -97,9 +97,15 @@ export default function AdminChat() {
   const toggleStatus = async () => {
     if (!selected || !workspaceId) return;
     const newStatus = selected.status === "resolved" ? "unresolved" : "resolved";
-    await updateDoc(doc(db, "workspaces", workspaceId, "conversations", selected.id), {
-      status: newStatus
-    });
+    
+    await Promise.all([
+      updateDoc(doc(db, "workspaces", workspaceId, "conversations", selected.id), {
+        status: newStatus
+      }),
+      updateDoc(doc(db, "workspaces", workspaceId), {
+        unresolvedCount: increment(newStatus === "unresolved" ? 1 : -1)
+      })
+    ]);
   };
 
 
@@ -184,7 +190,7 @@ export default function AdminChat() {
                             </>
                           ) : (
                             <>
-                              <AlertCircle size={14} strokeWidth={4} />
+                              <X size={14} strokeWidth={4} />
                               <span>Unresolved</span>
                             </>
                           )}

@@ -26,8 +26,14 @@ export function CreateWorkspaceModal({ userId, isOpen, onClose }: CreateWorkspac
     setIsCreating(true);
     try {
       const docRef = await addDoc(collection(db, "workspaces"), {
-        name: newWsName, ownerId: userId, createdAt: serverTimestamp(),
-        settings: { color: "#3b82f6", name: newWsName, logo: "" }
+        name: newWsName, 
+        ownerId: userId, 
+        createdAt: serverTimestamp(),
+        settings: { color: "#3b82f6", name: newWsName, logo: "" },
+        unresolvedCount: 0,
+        unreadCount: 0,
+        totalMessages: 0,
+        conversationCount: 0
       });
       router.push(`/admin/workspace/${docRef.id}`);
       onClose();
