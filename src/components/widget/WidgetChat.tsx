@@ -15,7 +15,17 @@ export function WidgetChat({ messages, onSend, color }: { messages: any[], onSen
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight);
+    const scrollToBottom = () => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      }
+    };
+    
+    // Scroll immediately
+    scrollToBottom();
+    // Also scroll after a tiny delay to ensure layout is complete
+    const timer = setTimeout(scrollToBottom, 50);
+    return () => clearTimeout(timer);
   }, [messages]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -98,7 +108,12 @@ export function WidgetChat({ messages, onSend, color }: { messages: any[], onSen
                 </button>
               )}
               {!text.trim() && (
-                <div className="flex items-center gap-2">
+                <a 
+                  href="https://help-deck-gamma.vercel.app/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 hover:opacity-70 transition-opacity cursor-pointer"
+                >
                   <span className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">We run on</span>
                   <div className="flex items-center gap-1.5 text-[11px] font-black text-slate-400">
                     <div className="w-3.5 h-3.5 bg-slate-300 rounded-[3px] flex items-center justify-center">
@@ -106,7 +121,7 @@ export function WidgetChat({ messages, onSend, color }: { messages: any[], onSen
                     </div>
                     helpdeck
                   </div>
-                </div>
+                </a>
               )}
             </div>
           </div>

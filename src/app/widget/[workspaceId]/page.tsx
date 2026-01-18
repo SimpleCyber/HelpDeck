@@ -190,7 +190,7 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
             onCollapse={toggle}
           />
 
-          <div className="flex-1 min-h-0 overflow-y-auto bg-[#fafafa]">
+          <div className="flex-1 min-h-0 bg-[#fafafa]">
             {!convId ? (
               <WidgetIdentify onStart={onStart} color={color} />
             ) : (
