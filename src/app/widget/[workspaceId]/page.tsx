@@ -141,7 +141,7 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
         userEmail,
         externalId,
         createdAt: serverTimestamp(),
-        status: "open",
+        status: "unresolved",
       }
     );
     localStorage.setItem(`crisp_conv_${workspaceId}`, r.id);
@@ -218,11 +218,12 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
                     }
                   );
 
-                  // Update counts
+                  // Update counts and status
                   await updateDoc(doc(db, "workspaces", workspaceId, "conversations", convId!), {
                     unreadCountAdmin: increment(1),
                     lastMessage: text,
-                    lastUpdatedAt: serverTimestamp()
+                    lastUpdatedAt: serverTimestamp(),
+                    status: "unresolved"
                   });
 
                   // Update workspace total unread and lifetime messages

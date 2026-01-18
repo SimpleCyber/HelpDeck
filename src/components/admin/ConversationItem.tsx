@@ -1,4 +1,4 @@
-import { User } from "lucide-react";
+import { User, Check, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function ConversationItem({ conv, active, onClick }: { conv: any, active: boolean, onClick: () => void }) {
@@ -32,16 +32,27 @@ export function ConversationItem({ conv, active, onClick }: { conv: any, active:
           <h3 className={cn("font-black text-sm truncate tracking-tight flex-1", active ? "text-blue-600" : "text-[var(--text-main)]")}>
             {conv.userName}
           </h3>
-          <div className="flex flex-col items-end gap-1">
+          <div className="flex flex-col items-end gap-0.5">
             <span className="text-[10px] font-bold text-[var(--text-muted)] opacity-60 uppercase shrink-0">{time}</span>
-            {conv.unreadCountAdmin > 0 && (
-              <div className="min-w-[18px] h-[18px] bg-blue-600 rounded-md shadow-lg shadow-blue-500/20 shrink-0 flex items-center justify-center px-1">
-                <span className="text-[10px] font-black text-white leading-none">{Math.max(0, conv.unreadCountAdmin)}</span>
-              </div>
-            )}
+            <div className="flex items-center gap-1 mt-0.5">
+              {conv.status === "resolved" ? (
+                <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center shadow-sm shrink-0">
+                  <Check size={9} strokeWidth={5} className="text-white" />
+                </div>
+              ) : (
+                <div className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center shadow-sm shrink-0">
+                  <AlertCircle size={9} strokeWidth={5} className="text-white" />
+                </div>
+              )}
+              {conv.unreadCountAdmin > 0 && (
+                <div className="min-w-[15px] h-[15px] bg-blue-600 rounded-md shadow-lg shadow-blue-500/20 shrink-0 flex items-center justify-center px-1">
+                  <span className="text-[8px] font-black text-white leading-none">{Math.max(0, conv.unreadCountAdmin)}</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-        <p className={cn("text-xs truncate font-medium", active ? "text-[var(--text-main)]" : "text-[var(--text-muted)]")}>
+        <p className={cn("text-xs truncate font-medium -mt-3", active ? "text-[var(--text-main)]" : "text-[var(--text-muted)]")}>
           {conv.lastMessage || "Started a conversation"}
         </p>
       </div>

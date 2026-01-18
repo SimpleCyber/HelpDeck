@@ -3,7 +3,7 @@
 import { useAuth } from "@/lib/auth-context";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
-import { MessageSquare, Send, Loader2, Search, Image as ImageIcon } from "lucide-react";
+import { MessageSquare, Send, Loader2, Search, Image as ImageIcon, CheckCircle2, AlertCircle, Check, X } from "lucide-react";
 import { doc, getDoc, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, updateDoc, increment } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/Input";
 import { ConversationItem } from "@/components/admin/ConversationItem";
 import { MessageBubble } from "@/components/common/MessageBubble";
 import { compressImage } from "@/lib/image-utils";
+import { cn } from "@/lib/utils";
 
 export default function AdminChat() {
   const { user, loading: authL } = useAuth();
@@ -19,7 +20,8 @@ export default function AdminChat() {
   const { workspaceId } = useParams() as { workspaceId: string };
   const [ws, setWs] = useState<any>(null);
   const [convs, setConvs] = useState<any[]>([]);
-  const [selected, setSelected] = useState<any>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const selected = convs.find(c => c.id === activeId);
   const [msgs, setMsgs] = useState<any[]>([]);
   const [text, setText] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -92,6 +94,14 @@ export default function AdminChat() {
     });
   };
 
+  const toggleStatus = async () => {
+    if (!selected || !workspaceId) return;
+    const newStatus = selected.status === "resolved" ? "unresolved" : "resolved";
+    await updateDoc(doc(db, "workspaces", workspaceId, "conversations", selected.id), {
+      status: newStatus
+    });
+  };
+
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -134,7 +144,7 @@ export default function AdminChat() {
               </header>
               <div className="flex-1 overflow-y-auto">
                 {convs.length > 0 ? (
-                  convs.map(c => <ConversationItem key={c.id} conv={c} active={selected?.id === c.id} onClick={() => setSelected(c)} />)
+                  convs.map(c => <ConversationItem key={c.id} conv={c} active={activeId === c.id} onClick={() => setActiveId(c.id)} />)
                 ) : (
                   <div className="p-12 text-center">
                     <p className="text-sm font-bold text-[var(--text-muted)] opacity-50">No conversations yet</p>
@@ -153,15 +163,32 @@ export default function AdminChat() {
                         {selected.userName[0]?.toUpperCase()}
                       </div>
                       <div>
-                        <h2 className="font-black text-base text-[var(--text-main)] tracking-tight">{selected.userName}</h2>
-                        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest opacity-60">{selected.userEmail}</p>
+                        <h2 className="font-black text-base text-[var(--text-main)] tracking-tight leading-tight">{selected.userName}</h2>
+                        <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider opacity-50">{selected.userEmail}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                       <div className="px-4 py-2 bg-green-500/10 text-green-600 dark:text-green-400 rounded-xl text-[10px] font-black uppercase tracking-widest border border-green-500/20 flex items-center gap-2">
-                          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                          Active Now
-                       </div>
+                       <button 
+                        onClick={toggleStatus}
+                        className={cn(
+                          "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-md hover:scale-105 active:scale-95",
+                          selected.status === "resolved" 
+                            ? "bg-green-600 text-white shadow-green-500/10" 
+                            : "bg-red-600 text-white shadow-red-500/10"
+                        )}
+                       >
+                          {selected.status === "resolved" ? (
+                            <>
+                              <Check size={14} strokeWidth={4} />
+                              <span>Resolved</span>
+                            </>
+                          ) : (
+                            <>
+                              <AlertCircle size={14} strokeWidth={4} />
+                              <span>Unresolved</span>
+                            </>
+                          )}
+                       </button>
                     </div>
                   </header>
 
