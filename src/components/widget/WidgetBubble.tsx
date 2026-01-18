@@ -7,15 +7,15 @@ export function WidgetBubble({ isOpen, onClick, color, unreadCount = 0 }: { isOp
   if (isOpen) return null;
   
   return (
-    <div className="relative group">
+    <div className="relative group overflow-hidden">
       {unreadCount > 0 && (
-        <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center z-[100000] shadow-md animate-bounce">
+        <div className="absolute top-4 right-3 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center z-[100000] shadow-md animate-bounce">
           {unreadCount > 9 ? "9+" : unreadCount}
         </div>
       )}
       <button 
         onClick={onClick}
-        className="w-16 h-16 rounded-full shadow-2xl flex items-center justify-center text-white pointer-events-auto transition-all transform hover:scale-110 active:scale-95 z-[99999] overflow-hidden"
+        className="w-17 h-17 rounded-full shadow-2xl flex items-center justify-center text-white pointer-events-auto transition-all transform scale-110  hover:scale-100 active:scale-95 z-[99999] overflow-hidden"
         style={{ backgroundColor: color }}
       >
         <div className="absolute inset-0 noise-pattern opacity-10 group-hover:opacity-20 transition-opacity" />
