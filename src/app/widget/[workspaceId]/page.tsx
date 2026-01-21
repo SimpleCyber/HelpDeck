@@ -23,9 +23,12 @@ import { WidgetHeader } from "@/components/widget/WidgetHeader";
 import { WidgetIdentify } from "@/components/widget/WidgetIdentify";
 import { WidgetChat } from "@/components/widget/WidgetChat";
 import { AlertCircle } from "lucide-react";
+import { getWorkspaceWithCache, updateWorkspaceStats } from "@/lib/db-helpers";
 
 function WidgetContent({ workspaceId }: { workspaceId: string }) {
   const searchParams = useSearchParams();
+  const ownerId = searchParams.get("owner") || "";
+  
   const [isOpen, setIsOpen] = useState(false);
   const [ws, setWs] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -46,10 +49,17 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
   /* Workspace load                                     */
   /* -------------------------------------------------- */
   useEffect(() => {
-    if (!workspaceId) return;
+    if (!workspaceId || !ownerId) {
+      if (!ownerId && workspaceId) {
+        console.error("Widget: ownerId missing in searchParams");
+      }
+      setLoading(false);
+      return;
+    }
 
-    getDoc(doc(db, "workspaces", workspaceId)).then((s) => {
-      setWs(s.exists() ? s.data() : null);
+    // Use cached helper
+    getWorkspaceWithCache(ownerId, workspaceId).then((data) => {
+      setWs(data);
       setLoading(false);
     });
 
@@ -62,11 +72,12 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
       const saved = localStorage.getItem(`crisp_conv_${workspaceId}`);
       if (saved) setConvId(saved);
     }
-  }, [workspaceId, searchParams]);
+  }, [workspaceId, ownerId, searchParams]);
 
   const resumeOrStart = async (u: any) => {
+    if (!ownerId) return;
     const q = query(
-      collection(db, "workspaces", workspaceId, "conversations"),
+      collection(db, "users", ownerId, "workspaces", workspaceId, "conversations"),
       where(u.userId ? "externalId" : "userEmail", "==", u.userId || u.email),
       limit(1)
     );
@@ -81,12 +92,14 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
   };
 
   useEffect(() => {
-    if (!convId || !workspaceId) return;
+    if (!convId || !workspaceId || !ownerId) return;
 
     return onSnapshot(
       query(
         collection(
           db,
+          "users",
+          ownerId,
           "workspaces",
           workspaceId,
           "conversations",
@@ -97,33 +110,27 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
       ),
       (s) => {
         setMsgs(s.docs.map((d) => ({ id: d.id, ...d.data() })));
-        
-        // Listen to conversation doc for unread count
-        const convDoc = s.docs[0]?.ref.parent.parent; // This is getting collection, wait. 
-        // We are listening to messages collection. We need to listen to conversation doc ideally.
-        // Actually, let's just use a separate listener for conversation metadata if needed, 
-        // OR rely on the fact that we need the conversation ID.
       }
     );
-  }, [convId, workspaceId]);
+  }, [convId, workspaceId, ownerId]);
 
   // Listen to conversation metadata for unread count
   useEffect(() => {
-    if (!convId || !workspaceId) return;
-    return onSnapshot(doc(db, "workspaces", workspaceId, "conversations", convId), (s) => {
+    if (!convId || !workspaceId || !ownerId) return;
+    return onSnapshot(doc(db, "users", ownerId, "workspaces", workspaceId, "conversations", convId), (s) => {
        const data = s.data();
        if (data) setUnreadCount(data.unreadCountUser || 0);
     });
-  }, [convId, workspaceId]);
+  }, [convId, workspaceId, ownerId]);
 
   const toggle = async () => {
     const next = !isOpen;
     setIsOpen(next);
     window.parent.postMessage(next ? "expand" : "collapse", "*");
 
-    if (next && convId && unreadCount > 0) {
+    if (next && convId && unreadCount > 0 && ownerId) {
       // Clear unread count when opening
-      await updateDoc(doc(db, "workspaces", workspaceId, "conversations", convId), {
+      await updateDoc(doc(db, "users", ownerId, "workspaces", workspaceId, "conversations", convId), {
         unreadCountUser: 0
       });
     }
@@ -134,8 +141,9 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
     userEmail: string,
     externalId: string | null = null
   ) => {
+    if (!ownerId) return;
     const r = await addDoc(
-      collection(db, "workspaces", workspaceId, "conversations"),
+      collection(db, "users", ownerId, "workspaces", workspaceId, "conversations"),
       {
         userName,
         userEmail,
@@ -147,11 +155,9 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
     localStorage.setItem(`crisp_conv_${workspaceId}`, r.id);
     setConvId(r.id);
     
-    // Update workspace counts
-    await updateDoc(doc(db, "workspaces", workspaceId), {
-      conversationCount: increment(1),
-      unresolvedCount: increment(1)
-    });
+    // Update workspace counts using batched helper
+    await updateWorkspaceStats(ownerId, workspaceId, "conversationCount", 1);
+    await updateWorkspaceStats(ownerId, workspaceId, "unresolvedCount", 1);
   };
 
   if (loading) return null;
@@ -203,13 +209,16 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
               <WidgetChat
                 messages={msgs}
                 onSend={async (text) => {
-                  const convRef = doc(db, "workspaces", workspaceId, "conversations", convId!);
+                  if (!ownerId) return;
+                  const convRef = doc(db, "users", ownerId, "workspaces", workspaceId, "conversations", convId!);
                   const convSnap = await getDoc(convRef);
                   const oldStatus = convSnap.data()?.status;
 
                   await addDoc(
                     collection(
                       db,
+                      "users",
+                      ownerId,
                       "workspaces",
                       workspaceId,
                       "conversations",
@@ -234,20 +243,16 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
                     status: "unresolved",
                   };
 
-                  const wsUpdates: any = {
-                    unreadCount: increment(1),
-                    totalMessages: increment(1)
-                  };
+                  await updateDoc(convRef, updates);
+
+                  // Update workspace stats using batched helper
+                  await updateWorkspaceStats(ownerId, workspaceId, "messageCount", 1);
+                  await updateWorkspaceStats(ownerId, workspaceId, "unreadCount", 1);
 
                   // If it was resolved, increment the workspace's unresolvedCount
                   if (oldStatus === "resolved") {
-                    wsUpdates.unresolvedCount = increment(1);
+                    await updateWorkspaceStats(ownerId, workspaceId, "unresolvedCount", 1);
                   }
-
-                  await Promise.all([
-                    updateDoc(convRef, updates),
-                    updateDoc(doc(db, "workspaces", workspaceId), wsUpdates)
-                  ]);
                 }}
                 color={color}
               />

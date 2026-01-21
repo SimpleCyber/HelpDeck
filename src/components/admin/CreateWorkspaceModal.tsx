@@ -2,19 +2,21 @@
 
 import { useState } from "react";
 import { Loader2, Globe, X } from "lucide-react";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { invalidateCache, cacheKeys } from "@/lib/redis";
 
 interface CreateWorkspaceModalProps {
   userId: string;
+  userEmail: string;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export function CreateWorkspaceModal({ userId, isOpen, onClose }: CreateWorkspaceModalProps) {
+export function CreateWorkspaceModal({ userId, userEmail, isOpen, onClose }: CreateWorkspaceModalProps) {
   const router = useRouter();
   const [newWsName, setNewWsName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
@@ -25,17 +27,35 @@ export function CreateWorkspaceModal({ userId, isOpen, onClose }: CreateWorkspac
     
     setIsCreating(true);
     try {
-      const docRef = await addDoc(collection(db, "workspaces"), {
-        name: newWsName, 
-        ownerId: userId, 
+      // Generate a unique workspace ID
+      const wsId = `ws_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Create workspace under user's subcollection
+      const wsRef = doc(db, "users", userId, "workspaces", wsId);
+      await setDoc(wsRef, {
+        name: newWsName,
+        ownerId: userId,
+        ownerEmail: userEmail,
         createdAt: serverTimestamp(),
-        settings: { color: "#3b82f6", name: newWsName, logo: "" },
-        unresolvedCount: 0,
-        unreadCount: 0,
-        totalMessages: 0,
-        conversationCount: 0
+        lastVisitedAt: serverTimestamp(),
+        settings: { 
+          color: "#3b82f6", 
+          name: newWsName, 
+          logo: "" 
+        },
+        memberEmails: [],
+        stats: {
+          conversationCount: 0,
+          messageCount: 0,
+          unresolvedCount: 0,
+          unreadCount: 0
+        }
       });
-      router.push(`/admin/workspace/${docRef.id}`);
+
+      // Invalidate user's workspaces cache
+      await invalidateCache(cacheKeys.userWorkspaces(userId));
+      
+      router.push(`/admin/workspace/${wsId}?owner=${userId}`);
       onClose();
     } catch (error) {
       console.error("Error creating workspace", error);

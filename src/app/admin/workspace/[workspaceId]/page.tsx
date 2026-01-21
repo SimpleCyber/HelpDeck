@@ -1,8 +1,8 @@
 "use client";
 
 import { useAuth } from "@/lib/auth-context";
-import { useRouter, useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
 import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
@@ -10,29 +10,28 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { LogoUpload } from "@/components/admin/LogoUpload";
 import { DesignPreview } from "@/components/admin/DesignPreview";
-import { InstallationGuide } from "@/components/admin/InstallationGuide";
-import { DeleteWorkspace } from "@/components/admin/DeleteWorkspace";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, Save, Palette, Code, Loader2, Trash2, Users } from "lucide-react";
+import { Save, Loader2 } from "lucide-react";
+import { invalidateCache, cacheKeys } from "@/lib/redis";
 
-import { MembersManager } from "@/components/admin/MembersManager";
-
-export default function WorkspaceSettings() {
+function WorkspaceSettingsContent() {
   const { user, loading: authL } = useAuth();
   const router = useRouter();
   const { workspaceId } = useParams() as { workspaceId: string };
+  const searchParams = useSearchParams();
+  const ownerId = searchParams.get("owner") || user?.uid || "";
+  
   const [ws, setWs] = useState<any>(null);
   const [formData, setFormData] = useState({ name: "", color: "#3b82f6", logo: "" });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!authL && !user) router.push("/admin");
-    if (workspaceId) {
-      return onSnapshot(doc(db, "workspaces", workspaceId), (s: any) => {
+    if (workspaceId && ownerId) {
+      return onSnapshot(doc(db, "users", ownerId, "workspaces", workspaceId), (s: any) => {
         const data = s.data();
         if (data) {
           setWs(data);
-          // Only set form data if we haven't already or if it changes fundamentally (to avoid resetting cursor)
           setFormData(prev => {
             if (!prev.name) {
                return { 
@@ -46,23 +45,32 @@ export default function WorkspaceSettings() {
         }
       });
     }
-  }, [workspaceId, user, authL, router]);
+  }, [workspaceId, ownerId, user, authL, router]);
 
   const handleSave = async () => {
-    if (!ws || ws.ownerId !== user?.uid) return;
+    if (!ws || (ws.ownerId !== user?.uid && user?.email !== ws.ownerEmail)) return;
     setSaving(true);
-    await updateDoc(doc(db, "workspaces", workspaceId), {
-      name: formData.name,
-      settings: formData
-    });
-    setSaving(false);
+    try {
+      const wsRef = doc(db, "users", ownerId, "workspaces", workspaceId);
+      await updateDoc(wsRef, {
+        name: formData.name,
+        settings: formData
+      });
+      
+      // Invalidate workspace cache
+      await invalidateCache(cacheKeys.workspace(workspaceId));
+    } catch (err) {
+      console.error("Error saving workspace settings:", err);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const isOwner = ws?.ownerId === user?.uid;
+  const isOwner = ws?.ownerId === user?.uid || user?.email === ws?.ownerEmail;
 
   return (
     <div className="flex h-screen bg-[var(--bg-main)] text-[var(--text-main)] overflow-hidden">
-      <AdminSidebar activeTab="design" workspaceId={workspaceId} />
+      <AdminSidebar activeTab="design" workspaceId={workspaceId} ownerId={ownerId} />
       
       <div className="flex-1 flex flex-col overflow-hidden">
         {authL || !ws ? (
@@ -118,5 +126,17 @@ export default function WorkspaceSettings() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function WorkspaceSettings() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen items-center justify-center bg-[var(--bg-main)]">
+        <Loader2 className="animate-spin h-10 w-10 text-blue-500" />
+      </div>
+    }>
+      <WorkspaceSettingsContent />
+    </Suspense>
   );
 }

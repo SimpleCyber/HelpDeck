@@ -1,30 +1,30 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2, UserPlus, Mail, Shield, Loader2 } from "lucide-react";
+import { Plus, Trash2, UserPlus, Mail, Shield, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { cn } from "@/lib/utils";
+import { invalidateCache, cacheKeys } from "@/lib/redis";
 
 interface MembersManagerProps {
   workspaceId: string;
+  ownerId: string;
   memberEmails: string[];
   ownerEmail: string;
   isOwner: boolean;
 }
 
-import { X } from "lucide-react";
-
-export function MembersManager({ workspaceId, memberEmails = [], ownerEmail, isOwner }: MembersManagerProps) {
+export function MembersManager({ workspaceId, ownerId, memberEmails = [], ownerEmail, isOwner }: MembersManagerProps) {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
 
   const addMember = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || loading || !isOwner) return;
+    if (!email.trim() || loading || !isOwner || !ownerId) return;
     const lowerEmail = email.toLowerCase().trim();
     if (memberEmails.includes(lowerEmail)) {
         alert("User is already a member");
@@ -34,9 +34,12 @@ export function MembersManager({ workspaceId, memberEmails = [], ownerEmail, isO
     setLoading(true);
     setEmail(""); // Optimistic clear
     try {
-      await updateDoc(doc(db, "workspaces", workspaceId), {
+      const wsRef = doc(db, "users", ownerId, "workspaces", workspaceId);
+      await updateDoc(wsRef, {
         memberEmails: arrayUnion(lowerEmail)
       });
+      // Invalidate cache
+      await invalidateCache(cacheKeys.workspace(workspaceId));
     } catch (err) {
       console.error("Error adding member:", err);
       setEmail(lowerEmail); // Restore on error
@@ -46,15 +49,21 @@ export function MembersManager({ workspaceId, memberEmails = [], ownerEmail, isO
   };
 
   const removeMember = async (m: string) => {
-    if (!isOwner) return;
+    if (!isOwner || !ownerId) return;
     setDeleting(null); // Optimistic close
+    setLoading(true);
     try {
-      await updateDoc(doc(db, "workspaces", workspaceId), {
+      const wsRef = doc(db, "users", ownerId, "workspaces", workspaceId);
+      await updateDoc(wsRef, {
         memberEmails: arrayRemove(m)
       });
+      // Invalidate cache
+      await invalidateCache(cacheKeys.workspace(workspaceId));
     } catch (err) {
       console.error("Error removing member:", err);
       // Optional: Restore modal or show error toast if it fails
+    } finally {
+      setLoading(false);
     }
   };
 

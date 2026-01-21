@@ -1,5 +1,6 @@
 (function () {
   const websiteId = window.CRISP_WEBSITE_ID;
+  const ownerId = window.CRISP_OWNER_ID;
   const userData = window.HELPDECK_USER || null;
 
   if (!websiteId) {
@@ -12,10 +13,14 @@
     ? new URL(scriptTag.src).origin
     : window.location.origin;
 
-  let userParam = "";
+  let queryParams = `v=1`;
+  if (ownerId) {
+    queryParams += `&owner=${encodeURIComponent(ownerId)}`;
+  }
+  
   if (userData) {
     try {
-      userParam = `&user=${encodeURIComponent(JSON.stringify(userData))}`;
+      queryParams += `&user=${encodeURIComponent(JSON.stringify(userData))}`;
     } catch (e) {
       console.error("HelpDeck: Invalid HELPDECK_USER data", e);
     }
@@ -23,7 +28,7 @@
 
   const iframe = document.createElement("iframe");
   iframe.id = "helpdeck-widget-iframe";
-  iframe.src = `${baseUrl}/widget/${websiteId}?v=1${userParam}`;
+  iframe.src = `${baseUrl}/widget/${websiteId}?${queryParams}`;
 
   /* -------------------------------------------------- */
   /* Base iframe styles (shared)                         */

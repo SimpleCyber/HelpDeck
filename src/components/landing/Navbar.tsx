@@ -18,7 +18,7 @@ export function Navbar() {
         </div>
         <div className="flex items-center gap-4">
           <Link href="/admin">
-            <Button variant="ghost" className="text-gray-600 hover:text-black font-medium">Sign In</Button>
+            {/* <Button variant="ghost" className="text-gray-600 hover:text-black font-medium">Sign In</Button> */}
           </Link>
           <Link href="/admin">
             <Button className="h-10 px-6 rounded-full bg-black text-white hover:bg-gray-800 shadow-lg shadow-black/20 hover:shadow-black/10 transition-all font-medium">

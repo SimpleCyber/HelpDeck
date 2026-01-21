@@ -3,14 +3,15 @@ import { Save, Copy, Code, FileCode, Check } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 
-export function InstallationGuide({ workspaceId }: { workspaceId: string }) {
+export function InstallationGuide({ workspaceId, ownerId }: { workspaceId: string, ownerId: string }) {
   const [copied, setCopied] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'html' | 'jsx' | 'tsx'>('html');
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
 
-  const getSnippets = (id: string, origin: string) => {
+  const getSnippets = (id: string, oid: string, origin: string) => {
     const htmlStandard = `<script>
   window.CRISP_WEBSITE_ID = "${id}";
+  window.CRISP_OWNER_ID = "${oid}";
   (function() {
     var s = document.createElement("script");
     s.src = "${origin}/widget-loader.js";
@@ -21,6 +22,7 @@ export function InstallationGuide({ workspaceId }: { workspaceId: string }) {
 
     const htmlDynamic = `<script>
   window.CRISP_WEBSITE_ID = "${id}";
+  window.CRISP_OWNER_ID = "${oid}";
   window.HELPDECK_USER = {
     name: "John Doe",
     email: "john@example.com",
@@ -39,6 +41,7 @@ export function InstallationGuide({ workspaceId }: { workspaceId: string }) {
 const HelpDeckWidget = () => {
   useEffect(() => {
     window.CRISP_WEBSITE_ID = "${id}";
+    window.CRISP_OWNER_ID = "${oid}";
     const s = document.createElement("script");
     s.src = "${origin}/widget-loader.js";
     s.async = true;
@@ -55,6 +58,7 @@ export default HelpDeckWidget;`;
 const HelpDeckWidget = () => {
   useEffect(() => {
     window.CRISP_WEBSITE_ID = "${id}";
+    window.CRISP_OWNER_ID = "${oid}";
     window.HELPDECK_USER = {
       name: "John Doe",
       email: "john@example.com",
@@ -77,6 +81,7 @@ import { useEffect } from 'react';
 export default function HelpDeckWidget() {
   useEffect(() => {
     (window as any).CRISP_WEBSITE_ID = "${id}";
+    (window as any).CRISP_OWNER_ID = "${oid}";
     const s = document.createElement("script");
     s.src = "${origin}/widget-loader.js";
     s.async = true;
@@ -92,6 +97,7 @@ import { useEffect } from 'react';
 export default function HelpDeckWidget() {
   useEffect(() => {
     (window as any).CRISP_WEBSITE_ID = "${id}";
+    (window as any).CRISP_OWNER_ID = "${oid}";
     (window as any).HELPDECK_USER = {
       name: "John Doe",
       email: "john@example.com",
@@ -113,7 +119,7 @@ export default function HelpDeckWidget() {
     };
   };
 
-  const snippets = getSnippets(workspaceId, origin);
+  const snippets = getSnippets(workspaceId, ownerId, origin);
 
   const copy = (txt: string, id: string) => {
     navigator.clipboard.writeText(txt);

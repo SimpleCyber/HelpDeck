@@ -4,20 +4,26 @@ import { useRouter } from "next/navigation";
 import { MessageSquare, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export function WorkspaceCard({ workspace }: { workspace: any }) {
+interface WorkspaceCardProps {
+  workspace: any;
+  ownerId: string;
+}
+
+export function WorkspaceCard({ workspace, ownerId }: WorkspaceCardProps) {
   const router = useRouter();
   const logo = workspace.settings?.logo;
   const color = workspace.settings?.color || "#3b82f6";
+  const unreadCount = workspace.stats?.unreadCount || 0;
 
   return (
     <div 
-      onClick={() => router.push(`/admin/chat/${workspace.id}`)}
+      onClick={() => router.push(`/admin/chat/${workspace.id}?owner=${ownerId}`)}
       className="bg-[var(--bg-card)] p-6 rounded-3xl border border-[var(--border-color)] hover:border-blue-300 dark:hover:border-blue-500/30 hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300 cursor-pointer group relative overflow-hidden"
     >
-      {workspace.unreadCount > 0 && (
+      {unreadCount > 0 && (
          <div className="absolute top-5 right-5 z-10">
             <div className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-full border-2 border-[var(--bg-card)] shadow-sm animate-in zoom-in">
-              {workspace.unreadCount} New
+              {unreadCount} New
             </div>
          </div>
       )}
@@ -57,7 +63,7 @@ export function WorkspaceCard({ workspace }: { workspace: any }) {
         <button 
            onClick={(e) => {
              e.stopPropagation();
-             router.push(`/admin/workspace/${workspace.id}`);
+             router.push(`/admin/workspace/${workspace.id}?owner=${ownerId}`);
            }}
            className="flex items-center gap-1.5 text-xs font-black text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 px-3 py-2 rounded-xl transition-colors"
         >

@@ -6,16 +6,18 @@ import { deleteDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
+import { invalidateCache, cacheKeys } from "@/lib/redis";
 
 interface DeleteWorkspaceModalProps {
   workspaceId: string;
+  ownerId: string;
   workspaceName: string;
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export function DeleteWorkspaceModal({ workspaceId, workspaceName, isOpen, onClose, onSuccess }: DeleteWorkspaceModalProps) {
+export function DeleteWorkspaceModal({ workspaceId, ownerId, workspaceName, isOpen, onClose, onSuccess }: DeleteWorkspaceModalProps) {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
   const [confirmName, setConfirmName] = useState("");
@@ -26,7 +28,12 @@ export function DeleteWorkspaceModal({ workspaceId, workspaceName, isOpen, onClo
     
     setIsDeleting(true);
     try {
-      await deleteDoc(doc(db, "workspaces", workspaceId));
+      // Delete from nested path
+      await deleteDoc(doc(db, "users", ownerId, "workspaces", workspaceId));
+      
+      // Invalidate cache
+      await invalidateCache(cacheKeys.userWorkspaces(ownerId));
+      
       onSuccess();
       onClose();
     } catch (error) {

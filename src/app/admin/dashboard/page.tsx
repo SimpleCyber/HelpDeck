@@ -3,54 +3,22 @@
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Plus, Loader2, Users, X, BarChart3, Globe } from "lucide-react";
-import { collection, query, where, onSnapshot, addDoc, serverTimestamp, getDocs, updateDoc, doc } from "firebase/firestore";
+import { Plus, Loader2, Users, X, BarChart3, Globe, Crown, Calendar } from "lucide-react";
+import { collection, query, onSnapshot, collectionGroup, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { WorkspaceCard } from "@/components/admin/WorkspaceCard";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
 import HelpDeckWidget from "@/components/includeHelpDesk";
 import { CreateWorkspaceModal } from "@/components/admin/CreateWorkspaceModal";
 
 export default function AdminDashboard() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, userProfile, loading: authLoading } = useAuth();
   const router = useRouter();
   const [workspaces, setWorkspaces] = useState<any[]>([]);
+  const [sharedWorkspaces, setSharedWorkspaces] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [syncing, setSyncing] = useState(false);
-
-  const syncStats = async () => {
-    if (syncing || workspaces.length === 0) return;
-    setSyncing(true);
-    try {
-      for (const ws of workspaces) {
-        const convsSnap = await getDocs(collection(db, "workspaces", ws.id, "conversations"));
-        const conversationCount = convsSnap.size;
-        
-        let totalMessages = 0;
-        let unresolvedCount = 0;
-        for (const convDoc of convsSnap.docs) {
-          const msgsSnap = await getDocs(collection(db, "workspaces", ws.id, "conversations", convDoc.id, "messages"));
-          totalMessages += msgsSnap.size;
-          if (convDoc.data().status === "unresolved") {
-            unresolvedCount++;
-          }
-        }
-
-        await updateDoc(doc(db, "workspaces", ws.id), {
-          totalMessages,
-          conversationCount,
-          unresolvedCount
-        });
-      }
-    } catch (err) {
-      console.error("Error syncing stats:", err);
-    } finally {
-      setSyncing(false);
-    }
-  };
 
   useEffect(() => {
     if (authLoading || !user) {
@@ -58,56 +26,79 @@ export default function AdminDashboard() {
       return;
     }
 
-    // Set up real-time listeners for workspaces
-    const qOwner = query(collection(db, "workspaces"), where("ownerId", "==", user.uid));
-    const qMember = query(collection(db, "workspaces"), where("memberEmails", "array-contains", user.email));
+    // Listen to user's own workspaces (subcollection)
+    const unsubOwned = onSnapshot(
+      collection(db, "users", user.uid, "workspaces"),
+      (snap) => {
+        const owned = snap.docs.map(doc => ({ 
+          id: doc.id, 
+          ownerId: user.uid,
+          ...doc.data() 
+        }));
+        setWorkspaces(owned);
+        setLoading(false);
+      },
+      (err) => {
+        console.error("Error listening to owned workspaces:", err);
+        setLoading(false);
+      }
+    );
 
-    let ownedWs: any[] = [];
-    let sharedWs: any[] = [];
-
-    const updateAllVisibility = () => {
-      const all = [...ownedWs, ...sharedWs.filter(s => !ownedWs.some(o => o.id === s.id))];
-      setWorkspaces(all);
-      setLoading(false);
-    };
-
-    const unsubOwner = onSnapshot(qOwner, (snap) => {
-      ownedWs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      updateAllVisibility();
-    }, (err) => {
-      console.error("Error listening to owned workspaces:", err);
-      setLoading(false);
-    });
-
-    const unsubMember = onSnapshot(qMember, (snap) => {
-      sharedWs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      updateAllVisibility();
-    }, (err) => {
-      console.error("Error listening to shared workspaces:", err);
-      setLoading(false);
-    });
+    // Listen to workspaces where user is a member (collection group query)
+    const unsubShared = onSnapshot(
+      query(
+        collectionGroup(db, "workspaces"),
+        where("memberEmails", "array-contains", user.email)
+      ),
+      (snap) => {
+        const shared = snap.docs
+          .map(doc => {
+            // Extract ownerId from path: users/{ownerId}/workspaces/{wsId}
+            const pathParts = doc.ref.path.split('/');
+            const ownerId = pathParts[1];
+            return { 
+              id: doc.id, 
+              ownerId,
+              ...doc.data() 
+            };
+          })
+          // Filter out workspaces we already own
+          .filter(ws => ws.ownerId !== user.uid);
+        setSharedWorkspaces(shared);
+      },
+      (err) => {
+        console.error("Error listening to shared workspaces:", err);
+      }
+    );
 
     return () => {
-      unsubOwner();
-      unsubMember();
+      unsubOwned();
+      unsubShared();
     };
   }, [user, authLoading, router]);
 
+  // Combine owned and shared workspaces
+  const allWorkspaces = [...workspaces, ...sharedWorkspaces];
 
+  // Calculate stats from the new structure
+  const unresolvedQueries = allWorkspaces.reduce((acc, ws) => 
+    acc + Math.max(0, ws.stats?.unresolvedCount || 0), 0);
+  
+  const totalMembers = new Set(allWorkspaces.flatMap(ws => ws.memberEmails || [])).size;
+  
+  const totalCustomers = allWorkspaces.reduce((acc, ws) => 
+    acc + Math.max(0, ws.stats?.conversationCount || 0), 0);
 
-  // Calculate stats
-  const unresolvedQueries = workspaces.reduce((acc, ws) => acc + Math.max(0, ws.unresolvedCount || 0), 0);
-  
-  const totalMembers = new Set(workspaces.flatMap(ws => ws.memberEmails || [])).size;
-  
-  const totalCustomers = workspaces.reduce((acc, ws) => acc + Math.max(0, ws.conversationCount || 0), 0);
+  // Format subscription info
+  const planLabel = userProfile?.subscription?.plan 
+    ? userProfile.subscription.plan.charAt(0).toUpperCase() + userProfile.subscription.plan.slice(1)
+    : "Trial";
 
   const stats = [
-    { label: "Total Workspaces", value: workspaces.length, icon: Globe, color: "text-blue-600", bg: "bg-blue-50" },
+    { label: "Total Workspaces", value: allWorkspaces.length, icon: Globe, color: "text-blue-600", bg: "bg-blue-50" },
     { label: "Team Members", value: totalMembers, icon: Users, color: "text-purple-600", bg: "bg-purple-50" },
     { label: "Total Customers", value: totalCustomers, icon: BarChart3, color: "text-orange-600", bg: "bg-orange-50" },
     { label: "Unresolved Queries", value: unresolvedQueries, icon: X, color: "text-red-600", bg: "bg-red-50" },
-
   ];
 
   return (
@@ -132,21 +123,11 @@ export default function AdminDashboard() {
                   </h1>
                 </div>
                 <div className="flex items-center gap-4 mb-2">
-                  <Button 
-                    variant="outline" 
-                    onClick={syncStats} 
-                    disabled={syncing}
-                    className="rounded-2xl font-bold border-[var(--border-color)] hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-all px-6 h-12"
-                  >
-                    {syncing ? (
-                      <div className="flex items-center gap-2">
-                        <Loader2 size={16} className="animate-spin" />
-                        <span>Syncing...</span>
-                      </div>
-                    ) : (
-                      <span>Sync Statistics</span>
-                    )}
-                  </Button>
+                  {/* Subscription Badge */}
+                  <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
+                    <Crown size={16} className="text-amber-600" />
+                    <span className="text-sm font-bold text-amber-700 dark:text-amber-400">{planLabel} Plan</span>
+                  </div>
                 </div>
               </div>
 
@@ -167,12 +148,12 @@ export default function AdminDashboard() {
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                    <h2 className="text-2xl font-black text-[var(--text-main)] tracking-tight">Your Workspaces</h2>
-                   <div className="text-sm font-semibold text-[var(--text-muted)]">{workspaces.length} total</div>
+                   <div className="text-sm font-semibold text-[var(--text-muted)]">{allWorkspaces.length} total</div>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {workspaces.map(ws => (
-                    <WorkspaceCard key={ws.id} workspace={ws} />
+                  {allWorkspaces.map(ws => (
+                    <WorkspaceCard key={ws.id} workspace={ws} ownerId={ws.ownerId} />
                   ))}
                   <button 
                     onClick={() => setShowCreateModal(true)}
@@ -193,6 +174,7 @@ export default function AdminDashboard() {
       {/* Modern Create Modal */}
       <CreateWorkspaceModal 
         userId={user?.uid || ""} 
+        userEmail={user?.email || ""}
         isOpen={showCreateModal} 
         onClose={() => setShowCreateModal(false)} 
       />

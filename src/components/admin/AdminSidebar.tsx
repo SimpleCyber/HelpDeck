@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 
 import { useAuth } from "@/lib/auth-context";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { 
   LayoutDashboard, 
   Settings, 
@@ -19,12 +19,13 @@ import {
   Code2,
   Users,
   CheckCircle2,
-  Plus
+  Plus,
+  Crown
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
-import { collection, query, where, onSnapshot } from "firebase/firestore";
+import { collection, query, where, onSnapshot, collectionGroup } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { CreateWorkspaceModal } from "@/components/admin/CreateWorkspaceModal";
 import { DeleteWorkspaceModal } from "@/components/admin/DeleteWorkspaceModal";
@@ -33,22 +34,29 @@ import { doc } from "firebase/firestore";
 import { Trash2, Sun, Moon, MoreVertical } from "lucide-react";
 import { HelpDeckLogo } from "@/components/common/HelpDeckLogo";
 
-export function AdminSidebar({ workspaceId, activeTab }: { workspaceId?: string, activeTab: string }) {
-  const { user, logout } = useAuth();
+export function AdminSidebar({ workspaceId, activeTab, ownerId: propOwnerId }: { workspaceId?: string, activeTab: string, ownerId?: string }) {
+  const { user, userProfile, logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   
+  // Resolve ownerId: from prop, then from search params, then from current user
+  const resolvedOwnerId = propOwnerId || searchParams.get("owner") || user?.uid || "";
+
   // Workspace Switcher State
   const [workspaces, setWorkspaces] = useState<any[]>([]);
+  const [sharedWorkspaces, setSharedWorkspaces] = useState<any[]>([]);
   const [showWsSwitcher, setShowWsSwitcher] = useState(false);
-  const currentWs = workspaces.find(w => w.id === workspaceId);
+  
+  const allWorkspaces = [...workspaces, ...sharedWorkspaces];
+  const currentWs = allWorkspaces.find(w => w.id === workspaceId);
 
   // Deletion State
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [wsToDelete, setWsToDelete] = useState<any>(null); // Store full workspace object
+  const [wsToDelete, setWsToDelete] = useState<any>(null);
 
   // Refs for click outside
   const userMenuRef = React.useRef<HTMLDivElement>(null);
@@ -68,34 +76,46 @@ export function AdminSidebar({ workspaceId, activeTab }: { workspaceId?: string,
   useEffect(() => {
     if (!user) return;
 
-    // Fetch owned
-    const qOwner = query(collection(db, "workspaces"), where("ownerId", "==", user.uid));
-    // Fetch shared
-    const qMember = query(collection(db, "workspaces"), where("memberEmails", "array-contains", user.email));
+    // Listen to user's own workspaces (subcollection)
+    const unsubOwned = onSnapshot(
+      collection(db, "users", user.uid, "workspaces"),
+      (snap) => {
+        const owned = snap.docs.map(doc => ({ 
+          id: doc.id, 
+          ownerId: user.uid,
+          ...doc.data() 
+        }));
+        setWorkspaces(owned);
+      }
+    );
 
-    let ownedWs: any[] = [];
-    let sharedWs: any[] = [];
-
-    const updateAllVisibility = () => {
-      const all = [...ownedWs, ...sharedWs.filter(s => !ownedWs.some(o => o.id === s.id))];
-      setWorkspaces(all);
-    };
-
-    const unsubOwner = onSnapshot(qOwner, (snap) => {
-      ownedWs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      updateAllVisibility();
-    });
-
-    const unsubMember = onSnapshot(qMember, (snap) => {
-      sharedWs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      updateAllVisibility();
-    });
+    // Listen to shared workspaces (collection group)
+    const unsubShared = onSnapshot(
+      query(
+        collectionGroup(db, "workspaces"),
+        where("memberEmails", "array-contains", user.email)
+      ),
+      (snap) => {
+        const shared = snap.docs
+          .map(doc => {
+            const pathParts = doc.ref.path.split('/');
+            const ownerId = pathParts[1];
+            return { 
+              id: doc.id, 
+              ownerId,
+              ...doc.data() 
+            };
+          })
+          .filter(ws => ws.ownerId !== user.uid);
+        setSharedWorkspaces(shared);
+      }
+    );
 
     return () => {
-      unsubOwner();
-      unsubMember();
+      unsubOwned();
+      unsubShared();
     };
-  }, [user]); // Refresh list only when user context changes
+  }, [user]);
 
   const handleDeleteClick = (e: React.MouseEvent, ws: any) => {
     e.stopPropagation();
@@ -104,7 +124,6 @@ export function AdminSidebar({ workspaceId, activeTab }: { workspaceId?: string,
   };
 
   const onWorkspaceDeleted = () => {
-     setWorkspaces(prev => prev.filter(w => w.id !== wsToDelete?.id));
      if (workspaceId === wsToDelete?.id) router.push('/admin/dashboard');
      setWsToDelete(null);
   };
@@ -114,31 +133,35 @@ export function AdminSidebar({ workspaceId, activeTab }: { workspaceId?: string,
       id: 'chat', 
       label: 'Live Inbox', 
       icon: MessageSquare, 
-      path: `/admin/chat/${workspaceId}`, 
+      path: `/admin/chat/${workspaceId}?owner=${resolvedOwnerId}`, 
       enabled: !!workspaceId 
     },
     { 
       id: 'design', 
       label: 'Design', 
       icon: Palette, 
-      path: `/admin/workspace/${workspaceId}`, 
+      path: `/admin/workspace/${workspaceId}?owner=${resolvedOwnerId}`, 
       enabled: !!workspaceId 
     },
     { 
       id: 'installation', 
       label: 'Installation', 
       icon: Code2, 
-      path: `/admin/workspace/${workspaceId}/install`, 
+      path: `/admin/workspace/${workspaceId}/install?owner=${resolvedOwnerId}`, 
       enabled: !!workspaceId 
     },
     { 
       id: 'members', 
       label: 'Members', 
       icon: Users, 
-      path: `/admin/workspace/${workspaceId}/members`, 
+      path: `/admin/workspace/${workspaceId}/members?owner=${resolvedOwnerId}`, 
       enabled: !!workspaceId 
     },
   ];
+
+  const planLabel = userProfile?.subscription?.plan 
+    ? userProfile.subscription.plan.charAt(0).toUpperCase() + userProfile.subscription.plan.slice(1)
+    : "Trial";
 
   return (
     <div className={cn(
@@ -159,7 +182,6 @@ export function AdminSidebar({ workspaceId, activeTab }: { workspaceId?: string,
           <HelpDeckLogo className="w-10 h-10" textClassName={cn("text-xl transition-opacity duration-300", isCollapsed ? "opacity-0 w-0 hidden" : "opacity-100")} />
         </Link>
         
-        {/* Theme Toggle in Header - Hide when collapsed to save space or keep it if desired. Requirement said only logo. */ }
         {!isCollapsed && (
            <button 
              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -226,10 +248,10 @@ export function AdminSidebar({ workspaceId, activeTab }: { workspaceId?: string,
              )}
           >
             <div className="max-h-64 overflow-y-auto p-2 space-y-1">
-               {workspaces.map(ws => (
+               {allWorkspaces.map(ws => (
                  <button 
                     key={ws.id}
-                    onClick={() => { setShowWsSwitcher(false); router.push(`/admin/chat/${ws.id}`); }}
+                    onClick={() => { setShowWsSwitcher(false); router.push(`/admin/chat/${ws.id}?owner=${ws.ownerId}`); }}
                     className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-[var(--bg-main)] transition-colors text-left group/item relative"
                  >
                      {ws.settings?.logo ? (
@@ -269,7 +291,7 @@ export function AdminSidebar({ workspaceId, activeTab }: { workspaceId?: string,
                  </button>
                ))}
                
-               {workspaces.length > 0 && <div className="h-[1px] bg-[var(--border-color)] my-1" />}
+               {allWorkspaces.length > 0 && <div className="h-[1px] bg-[var(--border-color)] my-1" />}
                
                <button 
                   onClick={() => { setShowWsSwitcher(false); setShowCreateModal(true); }}
@@ -288,6 +310,7 @@ export function AdminSidebar({ workspaceId, activeTab }: { workspaceId?: string,
       {/* Create Modal */}
       <CreateWorkspaceModal 
         userId={user?.uid || ""} 
+        userEmail={user?.email || ""}
         isOpen={showCreateModal} 
         onClose={() => setShowCreateModal(false)} 
       />
@@ -296,6 +319,7 @@ export function AdminSidebar({ workspaceId, activeTab }: { workspaceId?: string,
       {wsToDelete && (
         <DeleteWorkspaceModal 
            workspaceId={wsToDelete.id}
+           ownerId={wsToDelete.ownerId}
            workspaceName={wsToDelete.name}
            isOpen={showDeleteModal}
            onClose={() => setShowDeleteModal(false)}
@@ -352,7 +376,9 @@ export function AdminSidebar({ workspaceId, activeTab }: { workspaceId?: string,
              )}
            >
              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-blue-600 font-bold border-2 border-white dark:border-black shadow-sm shrink-0 uppercase text-lg overflow-hidden">
-               {user?.photoURL ? (
+               {userProfile?.photoBase64 ? (
+                 <img src={userProfile.photoBase64} alt="Profile" className="w-full h-full object-cover" />
+               ) : user?.photoURL ? (
                  <img src={user.photoURL} alt="Profile" className="w-full h-full object-cover" />
                ) : (
                  user?.displayName?.[0] || user?.email?.[0] || 'U'
@@ -363,8 +389,9 @@ export function AdminSidebar({ workspaceId, activeTab }: { workspaceId?: string,
                  <div className="text-sm font-black text-[var(--text-main)] truncate">
                    @{user?.displayName?.split(' ').join('_') || user?.email?.split('@')[0]}
                  </div>
-                 <div className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">
-                   Workspace
+                 <div className="text-[10px] font-bold text-amber-600 flex items-center gap-1 uppercase tracking-wider">
+                   <Crown size={10} />
+                   {planLabel}
                  </div>
                </div>
              )}

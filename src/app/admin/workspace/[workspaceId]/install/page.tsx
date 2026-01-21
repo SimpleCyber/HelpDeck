@@ -1,30 +1,33 @@
 "use client";
 
 import { useAuth } from "@/lib/auth-context";
-import { useRouter, useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { InstallationGuide } from "@/components/admin/InstallationGuide";
 import { Loader2 } from "lucide-react";
 
-export default function InstallationPage() {
+function InstallationPageContent() {
   const { user, loading: authL } = useAuth();
   const router = useRouter();
   const { workspaceId } = useParams() as { workspaceId: string };
+  const searchParams = useSearchParams();
+  const ownerId = searchParams.get("owner") || user?.uid || "";
+  
   const [ws, setWs] = useState<any>(null);
 
   useEffect(() => {
     if (!authL && !user) router.push("/admin");
-    if (workspaceId) {
-      return onSnapshot(doc(db, "workspaces", workspaceId), (s: any) => {
+    if (workspaceId && ownerId) {
+      return onSnapshot(doc(db, "users", ownerId, "workspaces", workspaceId), (s: any) => {
         setWs(s.data());
       });
     }
-  }, [workspaceId, user, authL, router]);
+  }, [workspaceId, ownerId, user, authL, router]);
 
-  const isOwner = ws?.ownerId === user?.uid;
+  const isOwner = ws?.ownerId === user?.uid || user?.email === ws?.ownerEmail;
 
   if (ws && !isOwner) {
       return (
@@ -36,7 +39,7 @@ export default function InstallationPage() {
 
   return (
     <div className="flex h-screen bg-[var(--bg-main)] text-[var(--text-main)] overflow-hidden">
-      <AdminSidebar activeTab="installation" workspaceId={workspaceId} />
+      <AdminSidebar activeTab="installation" workspaceId={workspaceId} ownerId={ownerId} />
       
       <div className="flex-1 flex flex-col overflow-hidden">
         {authL || !ws ? (
@@ -51,11 +54,23 @@ export default function InstallationPage() {
                 <p className="text-[var(--text-muted)]">Get the code to add the widget to your website.</p>
               </div>
               
-              <InstallationGuide workspaceId={workspaceId} />
+              <InstallationGuide workspaceId={workspaceId} ownerId={ownerId} />
             </div>
           </main>
         )}
       </div>
     </div>
+  );
+}
+
+export default function InstallationPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-screen items-center justify-center bg-[var(--bg-main)]">
+        <Loader2 className="animate-spin h-10 w-10 text-blue-500" />
+      </div>
+    }>
+      <InstallationPageContent />
+    </Suspense>
   );
 }
