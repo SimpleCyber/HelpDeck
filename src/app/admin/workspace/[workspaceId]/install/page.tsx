@@ -5,7 +5,6 @@ import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { InstallationGuide } from "@/components/admin/InstallationGuide";
 import { Loader2 } from "lucide-react";
 
@@ -38,27 +37,23 @@ function InstallationPageContent() {
   }
 
   return (
-    <div className="flex h-screen bg-[var(--bg-main)] text-[var(--text-main)] overflow-hidden">
-      <AdminSidebar activeTab="installation" workspaceId={workspaceId} ownerId={ownerId} />
-      
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {authL || !ws ? (
-          <div className="flex-1 flex items-center justify-center">
-            <Loader2 className="animate-spin h-10 w-10 text-blue-500" />
-          </div>
-        ) : (
-          <main className="flex-1 overflow-y-auto p-12">
-            <div className="max-w-4xl mx-auto space-y-8">
-              <div>
-                <h1 className="text-3xl font-black text-[var(--text-main)] mb-2">Installation</h1>
-                <p className="text-[var(--text-muted)]">Get the code to add the widget to your website.</p>
-              </div>
-              
-              <InstallationGuide workspaceId={workspaceId} ownerId={ownerId} />
+    <div className="flex-1 flex flex-col overflow-hidden">
+      {authL || !ws ? (
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="animate-spin h-10 w-10 text-blue-500" />
+        </div>
+      ) : (
+        <main className="flex-1 overflow-y-auto p-12">
+          <div className="max-w-4xl mx-auto space-y-8">
+            <div>
+              <h1 className="text-3xl font-black text-[var(--text-main)] mb-2">Installation</h1>
+              <p className="text-[var(--text-muted)]">Get the code to add the widget to your website.</p>
             </div>
-          </main>
-        )}
-      </div>
+            
+            <InstallationGuide workspaceId={workspaceId} ownerId={ownerId} />
+          </div>
+        </main>
+      )}
     </div>
   );
 }

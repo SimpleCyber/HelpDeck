@@ -12,8 +12,9 @@ export default function HelpDeckWidget({ user }: { user: any }) {
       email: user.email,
       userId: user.uid
     };
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_URL || '';
     const s = document.createElement("script");
-    s.src = `${process.env.NEXT_PUBLIC_APP_URL}/widget-loader.js`;
+    s.src = `${baseUrl}/widget-loader.js`;
     s.async = true;
     document.head.appendChild(s);
   }, [user]);

@@ -9,7 +9,6 @@ import { db } from "@/lib/firebase";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { WorkspaceCard } from "@/components/admin/WorkspaceCard";
 import { Button } from "@/components/ui/Button";
-import HelpDeckWidget from "@/components/includeHelpDesk";
 import { CreateWorkspaceModal } from "@/components/admin/CreateWorkspaceModal";
 
 export default function AdminDashboard() {
@@ -121,9 +120,9 @@ export default function AdminDashboard() {
               </div>
               <div className="flex items-center gap-4 mb-2">
                 {/* Subscription Badge */}
-                <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-100 to-orange-100 dark:from-amber-900/40 dark:to-orange-900/40 border border-amber-200 dark:border-amber-700 rounded-xl shadow-sm">
-                  <Crown size={16} className="text-amber-600" />
-                  <span className="text-sm font-bold text-amber-800 dark:text-amber-400">{planLabel} Plan</span>
+                <div className="flex items-center gap-2 px-4 py-2 border border-amber-600 dark:border-amber-700 rounded-xl shadow-sm">
+                  <Crown size={16} className="text-white dark:text-amber-400" />
+                  <span className="text-sm font-bold text-white dark:text-amber-400">{planLabel} Plan</span>
                 </div>
               </div>
             </div>
@@ -171,7 +170,6 @@ export default function AdminDashboard() {
             isOpen={showCreateModal} 
             onClose={() => setShowCreateModal(false)} 
           />
-          <HelpDeckWidget user={user} />
         </main>
       )}
     </>

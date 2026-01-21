@@ -22,7 +22,7 @@ import { WidgetBubble } from "@/components/widget/WidgetBubble";
 import { WidgetHeader } from "@/components/widget/WidgetHeader";
 import { WidgetIdentify } from "@/components/widget/WidgetIdentify";
 import { WidgetChat } from "@/components/widget/WidgetChat";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, X } from "lucide-react";
 import { getWorkspaceWithCache, updateWorkspaceStats } from "@/lib/db-helpers";
 
 function WidgetContent({ workspaceId }: { workspaceId: string }) {
@@ -170,7 +170,14 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
       <div id="helpdeck-root">
         <div className="fixed bottom-2 right-2 flex flex-col items-end">
           {isOpen && (
-            <div className="w-80 h-[400px] bg-[#fafafa] rounded-2xl shadow-2xl flex flex-col items-center justify-center p-8 mb-3">
+            <div className="w-80 h-[400px] bg-[#fafafa] rounded-2xl shadow-2xl flex flex-col items-center justify-center p-8 mb-3 relative">
+              <button 
+                onClick={toggle}
+                className="absolute top-4 right-4 p-2 rounded-xl text-gray-400 hover:bg-gray-100 transition-colors"
+                title="Close"
+              >
+                <X size={20} />
+              </button>
               <div className="w-16 h-16 rounded-3xl bg-red-50 flex items-center justify-center text-red-500 mb-6">
                 <AlertCircle size={32} />
               </div>

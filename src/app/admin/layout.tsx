@@ -4,8 +4,11 @@ import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { usePathname, useParams, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { Loader2 } from "lucide-react";
+import HelpDeckWidget from "@/components/includeHelpDesk";
+import { useAuth } from "@/lib/auth-context";
 
 function AdminLayoutInner({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const pathname = usePathname();
   const params = useParams();
   const searchParams = useSearchParams();
@@ -36,6 +39,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
       <div className="flex-1 flex flex-col overflow-hidden">
         {children}
       </div>
+      <HelpDeckWidget user={user} />
     </div>
   );
 }
