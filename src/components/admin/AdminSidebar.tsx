@@ -20,7 +20,8 @@ import {
   Users,
   CheckCircle2,
   Plus,
-  Crown
+  Crown,
+  Shield
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -360,6 +361,35 @@ export function AdminSidebar({ workspaceId, activeTab, ownerId: propOwnerId }: {
           </Link>
         ))}
       </nav>
+
+      {/* Super Admin Link - Only for super admins */}
+      {(() => {
+        const superAdminEmails = (process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAILS || "").split(",").map(e => e.trim().toLowerCase());
+        const isSuperAdmin = user?.email && superAdminEmails.includes(user.email.toLowerCase());
+        
+        if (!isSuperAdmin) return null;
+        
+        return (
+          <div className="px-4 mb-2">
+            <Link
+              href="/superadmin"
+              className={cn(
+                "flex items-center gap-3 w-full px-4 py-3 rounded-2xl font-bold transition-all duration-200 group",
+                isCollapsed ? "justify-center" : "",
+                "bg-gradient-to-r from-purple-500/10 to-pink-500/10 text-purple-600 dark:text-purple-400 hover:from-purple-500/20 hover:to-pink-500/20 border border-purple-500/20"
+              )}
+            >
+              <Shield size={18} />
+              {!isCollapsed && <span className="text-sm">Super Admin</span>}
+              {isCollapsed && (
+                <div className="absolute left-full ml-5 px-3 py-2 bg-purple-600 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 whitespace-nowrap z-50 font-bold shadow-xl translate-x-2 group-hover:translate-x-0">
+                  Super Admin
+                </div>
+              )}
+            </Link>
+          </div>
+        );
+      })()}
 
       {/* User Profile */}
       <div className="p-4 mt-auto relative" ref={userMenuRef}>
