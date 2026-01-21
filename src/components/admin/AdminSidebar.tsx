@@ -249,29 +249,30 @@ export function AdminSidebar({ workspaceId, activeTab, ownerId: propOwnerId }: {
           >
             <div className="max-h-64 overflow-y-auto p-2 space-y-1">
                {allWorkspaces.map(ws => (
-                 <button 
+                  <Link 
                     key={ws.id}
-                    onClick={() => { setShowWsSwitcher(false); router.push(`/admin/chat/${ws.id}?owner=${ws.ownerId}`); }}
+                    href={`/admin/chat/${ws.id}?owner=${ws.ownerId}`}
+                    onClick={() => setShowWsSwitcher(false)}
                     className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-[var(--bg-main)] transition-colors text-left group/item relative"
-                 >
-                     {ws.settings?.logo ? (
-                        <img src={ws.settings.logo} alt={ws.name} className="w-8 h-8 rounded-lg object-contain bg-white border border-[var(--border-color)] shrink-0" />
-                     ) : ws.name.toLowerCase() === 'help deck' ? (
-                        <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center shrink-0">
-                           <span className="text-white font-black text-xs">HD</span>
+                  >
+                      {ws.settings?.logo ? (
+                         <img src={ws.settings.logo} alt={ws.name} className="w-8 h-8 rounded-lg object-contain bg-white border border-[var(--border-color)] shrink-0" />
+                      ) : ws.name.toLowerCase() === 'help deck' ? (
+                         <div className="w-8 h-8 rounded-lg bg-black flex items-center justify-center shrink-0">
+                            <span className="text-white font-black text-xs">HD</span>
+                         </div>
+                      ) : ws.name.toLowerCase() === 'pledgechat' ? (
+                         <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shrink-0">
+                            <span className="text-white font-black text-xs">PC</span>
+                         </div>
+                      ) : (
+                        <div 
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-sm shrink-0"
+                          style={{ backgroundColor: ws.settings?.color || '#3b82f6' }}
+                        >
+                          {ws.name[0].toUpperCase()}
                         </div>
-                     ) : ws.name.toLowerCase() === 'pledgechat' ? (
-                        <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shrink-0">
-                           <span className="text-white font-black text-xs">PC</span>
-                        </div>
-                     ) : (
-                       <div 
-                         className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-sm shrink-0"
-                         style={{ backgroundColor: ws.settings?.color || '#3b82f6' }}
-                       >
-                         {ws.name[0].toUpperCase()}
-                       </div>
-                     )}
+                      )}
                     <div className="min-w-0 flex-1">
                       <div className="text-sm font-bold text-[var(--text-main)] truncate">{ws.name}</div>
                       <div className="text-[10px] text-[var(--text-muted)] truncate">{ws.id === workspaceId && "Current"}</div>
@@ -281,14 +282,14 @@ export function AdminSidebar({ workspaceId, activeTab, ownerId: propOwnerId }: {
                     {/* Delete Action (only for owner) */}
                     {ws.ownerId === user?.uid && (
                       <div 
-                        onClick={(e) => handleDeleteClick(e, ws)}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteClick(e, ws); }}
                         className="absolute right-2 opacity-0 group-hover/item:opacity-100 p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition-all hover:scale-110"
                         title="Delete Workspace"
                       >
                          <Trash2 size={14} />
                       </div>
                     )}
-                 </button>
+                  </Link>
                ))}
                
                {allWorkspaces.length > 0 && <div className="h-[1px] bg-[var(--border-color)] my-1" />}
@@ -330,10 +331,9 @@ export function AdminSidebar({ workspaceId, activeTab, ownerId: propOwnerId }: {
       {/* Navigation */}
       <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto overflow-x-hidden no-scrollbar">
         {navItems.map((item) => (
-          <button 
+          <Link 
             key={item.id}
-            disabled={!item.enabled}
-            onClick={() => router.push(item.path)}
+            href={item.enabled ? item.path : "#"}
             className={cn(
               "flex items-center w-full px-4 py-3.5 rounded-2xl font-bold transition-all duration-200 group relative",
               isCollapsed ? "justify-center" : "justify-between",
@@ -341,7 +341,7 @@ export function AdminSidebar({ workspaceId, activeTab, ownerId: propOwnerId }: {
                 activeTab === item.id 
                   ? "bg-black dark:bg-white text-white dark:text-black shadow-lg shadow-black/10 dark:shadow-white/10" 
                   : "text-[var(--text-muted)] hover:bg-[var(--bg-main)] hover:text-[var(--text-main)]"
-              ) : "text-[var(--text-muted)] opacity-30 cursor-not-allowed"
+              ) : "text-[var(--text-muted)] opacity-30 cursor-not-allowed pointer-events-none"
             )}
           >
             <div className="flex items-center gap-3.5">
@@ -357,7 +357,7 @@ export function AdminSidebar({ workspaceId, activeTab, ownerId: propOwnerId }: {
                 {item.label}
               </div>
             )}
-          </button>
+          </Link>
         ))}
       </nav>
 
