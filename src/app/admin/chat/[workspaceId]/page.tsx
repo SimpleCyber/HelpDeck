@@ -60,7 +60,7 @@ function AdminChatContent() {
   const [allowImageUpload, setAllowImageUpload] = useState<boolean>(true);
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [limitReachedType, setLimitReachedType] = useState<'upload' | 'chat' | null>(null);
-  const [userPlan, setUserPlan] = useState("trial");
+  const [userPlan, setUserPlan] = useState("free");
 
   // Helper to get the base path for this workspace
   const getWsPath = () => `users/${ownerId}/workspaces/${workspaceId}`;
@@ -75,12 +75,12 @@ function AdminChatContent() {
         
         const userDocSnap = await getDoc(doc(db, "users", ownerId));
         const userData = userDocSnap.data();
-        const plan = userData?.subscription?.plan || "trial";
+        const plan = userData?.subscription?.plan || "free";
         setUserPlan(plan);
         
         // Default limits if not in config
         const limit = planConfig?.[plan]?.maxCustomers ?? (plan === 'premium' ? 1000 : plan === 'basic' ? 100 : 20);
-        const imgUpload = planConfig?.[plan]?.allowImageUpload ?? (plan === 'trial' ? false : true);
+        const imgUpload = planConfig?.[plan]?.allowImageUpload ?? (plan === 'free' ? false : true);
         
         setMaxCustomers(limit);
         setAllowImageUpload(imgUpload);

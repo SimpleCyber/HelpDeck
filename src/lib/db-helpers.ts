@@ -32,7 +32,7 @@ export interface UserProfile {
   createdAt: Timestamp | null;
   lastLoginAt: Timestamp | null;
   subscription: {
-    plan: "trial" | "basic" | "premium";
+    plan: "free" | "basic" | "premium";
     startDate: Timestamp | null;
     endDate: Timestamp | null;
     status: "active" | "expired" | "cancelled";
@@ -195,10 +195,6 @@ export async function createOrUpdateUser(
     const userRef = doc(db, "users", uid);
     
     if (isNewUser) {
-      // Calculate trial end date (7 days from now)
-      const trialEnd = new Date();
-      trialEnd.setDate(trialEnd.getDate() + 7);
-
       const newUserData: UserProfile = {
         name: data.name || "",
         email: data.email || "",
@@ -206,9 +202,9 @@ export async function createOrUpdateUser(
         createdAt: serverTimestamp() as unknown as Timestamp,
         lastLoginAt: serverTimestamp() as unknown as Timestamp,
         subscription: {
-          plan: "trial",
+          plan: "free",
           startDate: serverTimestamp() as unknown as Timestamp,
-          endDate: Timestamp.fromDate(trialEnd),
+          endDate: null,
           status: "active",
         },
       };

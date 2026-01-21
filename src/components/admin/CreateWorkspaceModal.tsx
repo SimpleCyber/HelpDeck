@@ -24,7 +24,7 @@ export function CreateWorkspaceModal({ userId, userEmail, isOpen, onClose }: Cre
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [loading, setLoading] = useState(true);
   const [limitReached, setLimitReached] = useState(false);
-  const [userPlan, setUserPlan] = useState("trial");
+  const [userPlan, setUserPlan] = useState("free");
 
   useEffect(() => {
     const checkLimit = async () => {
@@ -39,10 +39,14 @@ export function CreateWorkspaceModal({ userId, userEmail, isOpen, onClose }: Cre
 
         const userDocSnap = await getDoc(doc(db, "users", userId));
         const userData = userDocSnap.data();
-        const plan = userData?.subscription?.plan || "trial";
+        // Fallback to "free" instead of "trial", but respect "trial" if explicitly set in old data
+        const plan = userData?.subscription?.plan || "free";
         setUserPlan(plan);
 
-        const limit = planConfig?.[plan]?.maxWorkspaces ?? (plan === 'premium' ? 15 : plan === 'basic' ? 5 : 2);
+        // Map "free" or "trial" to the same limits if config is missing "trial" key but has "free" or vice versa logic
+        // For simple safety, just check limits safely
+        const limit = planConfig?.[plan]?.maxWorkspaces ?? 
+                      (plan === 'premium' ? 15 : plan === 'basic' ? 5 : 2);
         
         if (currentCount >= limit) {
           setLimitReached(true);
