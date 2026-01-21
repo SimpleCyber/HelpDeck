@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { Loader2, Globe, X } from "lucide-react";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { useState, useEffect } from "react";
+import { Loader2, Globe, X, AlertCircle } from "lucide-react";
+import { doc, setDoc, serverTimestamp, getDocs, collection, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { invalidateCache, cacheKeys } from "@/lib/redis";
+import { PricingPopup } from "./PricingPopup";
 
 interface CreateWorkspaceModalProps {
   userId: string;
@@ -20,6 +21,43 @@ export function CreateWorkspaceModal({ userId, userEmail, isOpen, onClose }: Cre
   const router = useRouter();
   const [newWsName, setNewWsName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [limitReached, setLimitReached] = useState(false);
+  const [userPlan, setUserPlan] = useState("trial");
+
+  useEffect(() => {
+    const checkLimit = async () => {
+      if (!isOpen) return;
+      setLoading(true);
+      try {
+        const planConfigSnap = await getDoc(doc(db, "plans_config", "global"));
+        const planConfig = planConfigSnap.exists() ? planConfigSnap.data() : null;
+        
+        const userWorkspacesSnap = await getDocs(collection(db, "users", userId, "workspaces"));
+        const currentCount = userWorkspacesSnap.size;
+
+        const userDocSnap = await getDoc(doc(db, "users", userId));
+        const userData = userDocSnap.data();
+        const plan = userData?.subscription?.plan || "trial";
+        setUserPlan(plan);
+
+        const limit = planConfig?.[plan]?.maxWorkspaces ?? (plan === 'premium' ? 15 : plan === 'basic' ? 5 : 2);
+        
+        if (currentCount >= limit) {
+          setLimitReached(true);
+        } else {
+          setLimitReached(false);
+        }
+      } catch (error) {
+        console.error("Error checking limits:", error);
+        setLimitReached(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkLimit();
+  }, [isOpen, userId]);
 
   const createWs = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,10 +65,8 @@ export function CreateWorkspaceModal({ userId, userEmail, isOpen, onClose }: Cre
     
     setIsCreating(true);
     try {
-      // Generate a unique workspace ID
       const wsId = `ws_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
-      // Create workspace under user's subcollection
       const wsRef = doc(db, "users", userId, "workspaces", wsId);
       await setDoc(wsRef, {
         name: newWsName,
@@ -52,7 +88,6 @@ export function CreateWorkspaceModal({ userId, userEmail, isOpen, onClose }: Cre
         }
       });
 
-      // Invalidate user's workspaces cache
       await invalidateCache(cacheKeys.userWorkspaces(userId));
       
       router.push(`/admin/workspace/${wsId}?owner=${userId}`);
@@ -65,6 +100,55 @@ export function CreateWorkspaceModal({ userId, userEmail, isOpen, onClose }: Cre
 
   if (!isOpen) return null;
 
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in">
+        <Loader2 className="animate-spin text-white w-10 h-10" />
+      </div>
+    );
+  }
+
+  // 1. If Upgrade Popup is shown, render ONLY it.
+  if (showUpgrade) {
+    return <PricingPopup isOpen={showUpgrade} onClose={() => { setShowUpgrade(false); }} />;
+  }
+
+  // 2. If Limit Reached, render Limit Card
+  if (limitReached) {
+    return (
+      <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in zoom-in-95 duration-200">
+        <div className="bg-white dark:bg-[#1e293b] rounded-[32px] p-8 w-full max-w-sm shadow-2xl relative text-center border border-slate-100 dark:border-slate-700">
+          {/* Icon */}
+          <div className="w-16 h-16 bg-orange-50 dark:bg-orange-900/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertCircle size={32} className="text-orange-500" />
+          </div>
+          
+          <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Limit Reached</h3>
+          
+          <p className="text-slate-500 dark:text-slate-400 font-medium mb-8 leading-relaxed text-sm">
+            You've used all available workspaces for the <strong className="capitalize text-slate-900 dark:text-white">{userPlan}</strong> plan. Upgrade to create more.
+          </p>
+
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={onClose}
+              className="flex-1 py-3 text-xs font-black uppercase tracking-wider text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white transition-colors"
+            >
+              Cancel
+            </button>
+            <button 
+              onClick={() => setShowUpgrade(true)}
+              className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-600/20 transition-all transform active:scale-95"
+            >
+              Upgrade
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 3. Normal Form
   return (
     <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
       <div 

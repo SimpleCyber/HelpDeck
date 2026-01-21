@@ -31,6 +31,7 @@ import { MessageBubble } from "@/components/common/MessageBubble";
 import { compressImage } from "@/lib/image-utils";
 import { cn } from "@/lib/utils";
 import { updateWorkspaceStats } from "@/lib/db-helpers";
+import { PricingPopup } from "@/components/admin/PricingPopup";
 
 function AdminChatContent() {
   const { user, loading: authL } = useAuth();
@@ -54,8 +55,41 @@ function AdminChatContent() {
   const [firstVisible, setFirstVisible] = useState<QueryDocumentSnapshot | null>(null);
   const MESSAGE_LIMIT = 50;
 
+  // Limits
+  const [maxCustomers, setMaxCustomers] = useState<number>(Infinity);
+  const [allowImageUpload, setAllowImageUpload] = useState<boolean>(true);
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [limitReachedType, setLimitReachedType] = useState<'upload' | 'chat' | null>(null);
+  const [userPlan, setUserPlan] = useState("trial");
+
   // Helper to get the base path for this workspace
   const getWsPath = () => `users/${ownerId}/workspaces/${workspaceId}`;
+
+  // Fetch Limit
+  useEffect(() => {
+    async function fetchLimit() {
+      if (!ownerId) return;
+      try {
+        const planConfigSnap = await getDoc(doc(db, "plans_config", "global"));
+        const planConfig = planConfigSnap.exists() ? planConfigSnap.data() : null;
+        
+        const userDocSnap = await getDoc(doc(db, "users", ownerId));
+        const userData = userDocSnap.data();
+        const plan = userData?.subscription?.plan || "trial";
+        setUserPlan(plan);
+        
+        // Default limits if not in config
+        const limit = planConfig?.[plan]?.maxCustomers ?? (plan === 'premium' ? 1000 : plan === 'basic' ? 100 : 20);
+        const imgUpload = planConfig?.[plan]?.allowImageUpload ?? (plan === 'trial' ? false : true);
+        
+        setMaxCustomers(limit);
+        setAllowImageUpload(imgUpload);
+      } catch (e) {
+        console.error("Error fetching limits", e);
+      }
+    }
+    fetchLimit();
+  }, [ownerId]);
 
   useEffect(() => {
     if (!authL && !user) router.push("/admin");
@@ -212,6 +246,13 @@ function AdminChatContent() {
     const file = e.target.files?.[0];
     if (!file || !selected) return;
 
+    if (!allowImageUpload) {
+      setLimitReachedType('upload');
+      // Reset input
+      e.target.value = '';
+      return;
+    }
+
     setUploading(true);
     const reader = new FileReader();
     reader.onloadend = async () => {
@@ -228,7 +269,49 @@ function AdminChatContent() {
   };
 
   return (
-    <div className="flex-1 flex overflow-hidden">
+    <div className="flex-1 flex overflow-hidden relative">
+      <PricingPopup isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} />
+      
+      {/* Limit Reached Alert */}
+      {limitReachedType && (
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white dark:bg-[#1e293b] rounded-[32px] p-8 w-full max-w-sm shadow-2xl relative text-center border border-slate-100 dark:border-slate-700">
+            {/* Icon */}
+            <div className="w-16 h-16 bg-orange-50 dark:bg-orange-900/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <AlertCircle size={32} className="text-orange-500" />
+            </div>
+            
+            <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Limit Reached</h3>
+            
+            <p className="text-slate-500 dark:text-slate-400 font-medium mb-8 leading-relaxed text-sm">
+              {limitReachedType === 'upload' 
+                ? <span>Image uploads are not available on the <strong className="capitalize text-slate-900 dark:text-white">{userPlan}</strong> plan.</span>
+                : <span>You've reached the conversation limit for the <strong className="capitalize text-slate-900 dark:text-white">{userPlan}</strong> plan.</span>
+              }
+              <br/>Upgrade to unlock this feature.
+            </p>
+
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={() => setLimitReachedType(null)}
+                className="flex-1 py-3 text-xs font-black uppercase tracking-wider text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => {
+                  setLimitReachedType(null);
+                  setShowUpgrade(true);
+                }}
+                className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-600/20 transition-all transform active:scale-95"
+              >
+                Upgrade
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {authL ? (
         <div className="flex-1 flex items-center justify-center">
           <Loader2 className="animate-spin h-10 w-10 text-blue-500" />
@@ -245,7 +328,24 @@ function AdminChatContent() {
             </header>
             <div className="flex-1 overflow-y-auto">
               {convs.length > 0 ? (
-                convs.map(c => <ConversationItem key={c.id} conv={c} active={activeId === c.id} onClick={() => setActiveId(c.id)} />)
+                convs.map((c, idx) => {
+                  const isLocked = idx >= maxCustomers;
+                  return (
+                    <ConversationItem 
+                      key={c.id} 
+                      conv={c} 
+                      active={activeId === c.id} 
+                      locked={isLocked}
+                      onClick={() => {
+                        if (isLocked) {
+                          setLimitReachedType('chat');
+                        } else {
+                          setActiveId(c.id);
+                        }
+                      }} 
+                    />
+                  );
+                })
               ) : (
                 <div className="p-12 text-center">
                   <p className="text-sm font-bold text-[var(--text-muted)] opacity-50">No conversations yet</p>

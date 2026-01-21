@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, Trash2, UserPlus, Mail, Shield, Loader2, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Plus, Trash2, UserPlus, Mail, Shield, Loader2, X, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import { doc, updateDoc, arrayUnion, arrayRemove, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { cn } from "@/lib/utils";
 import { invalidateCache, cacheKeys } from "@/lib/redis";
+import { PricingPopup } from "@/components/admin/PricingPopup";
 
 interface MembersManagerProps {
   workspaceId: string;
@@ -21,10 +22,46 @@ export function MembersManager({ workspaceId, ownerId, memberEmails = [], ownerE
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  
+  // Limit states
+  const [maxMembers, setMaxMembers] = useState<number>(Infinity);
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [showLimitReached, setShowLimitReached] = useState(false);
+  const [userPlan, setUserPlan] = useState("trial");
+
+  useEffect(() => {
+    async function fetchLimit() {
+      if (!ownerId) return;
+      try {
+        const planConfigSnap = await getDoc(doc(db, "plans_config", "global"));
+        const planConfig = planConfigSnap.exists() ? planConfigSnap.data() : null;
+        
+        const userDocSnap = await getDoc(doc(db, "users", ownerId));
+        const userData = userDocSnap.data();
+        const plan = userData?.subscription?.plan || "trial";
+        setUserPlan(plan);
+        
+        // Default limits if not in config
+        const limit = planConfig?.[plan]?.maxMembersPerWorkspace ?? (plan === 'premium' ? 5 : plan === 'basic' ? 2 : 1);
+        setMaxMembers(limit);
+      } catch (e) {
+        console.error("Error fetching limits", e);
+      }
+    }
+    fetchLimit();
+  }, [ownerId]);
+
 
   const addMember = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || loading || !isOwner || !ownerId) return;
+    
+    // Check limit
+    if (memberEmails.length >= maxMembers) {
+        setShowLimitReached(true);
+        return;
+    }
+
     const lowerEmail = email.toLowerCase().trim();
     if (memberEmails.includes(lowerEmail)) {
         alert("User is already a member");
@@ -68,7 +105,45 @@ export function MembersManager({ workspaceId, ownerId, memberEmails = [], ownerE
   };
 
   return (
-    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
+      <PricingPopup isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} />
+
+      {/* Limit Reached Alert */}
+      {showLimitReached && (
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white dark:bg-[#1e293b] rounded-[32px] p-8 w-full max-w-sm shadow-2xl relative text-center border border-slate-100 dark:border-slate-700">
+            {/* Icon */}
+            <div className="w-16 h-16 bg-orange-50 dark:bg-orange-900/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <AlertCircle size={32} className="text-orange-500" />
+            </div>
+            
+            <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Limit Reached</h3>
+            
+            <p className="text-slate-500 dark:text-slate-400 font-medium mb-8 leading-relaxed text-sm">
+              You can only add {maxMembers} members on the <strong className="capitalize text-slate-900 dark:text-white">{userPlan}</strong> plan. Upgrade to add more.
+            </p>
+
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={() => setShowLimitReached(false)}
+                className="flex-1 py-3 text-xs font-black uppercase tracking-wider text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => {
+                  setShowLimitReached(false);
+                  setShowUpgrade(true);
+                }}
+                className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-600/20 transition-all transform active:scale-95"
+              >
+                Upgrade
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <section className="space-y-6">
         <div className="flex items-center justify-between">
           <div>

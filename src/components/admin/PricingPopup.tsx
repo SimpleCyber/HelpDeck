@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { X, Check, Zap, Crown } from "lucide-react";
+import { X, Check, Zap, Crown, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { useAuth } from "@/lib/auth-context";
 
 interface PricingPopupProps {
   isOpen: boolean;
@@ -10,19 +13,38 @@ interface PricingPopupProps {
 }
 
 export function PricingPopup({ isOpen, onClose }: PricingPopupProps) {
+  const { user } = useAuth();
   const [isYearly, setIsYearly] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<"basic" | "premium" | null>(null);
+  const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
 
   const basicPrice = isYearly ? 12 : 14;
   const premiumPrice = isYearly ? 21 : 25;
 
-  const handleSubscribe = (plan: "basic" | "premium") => {
+  const handleSubscribe = async (plan: "basic" | "premium") => {
+    if (!user) return;
     setSelectedPlan(plan);
-    // Show a toast notification (dummy implementation)
-    alert(`Thank you for choosing the ${plan.charAt(0).toUpperCase() + plan.slice(1)} plan! Payment integration coming soon.`);
-    onClose();
+    setLoading(true);
+    
+    try {
+      await addDoc(collection(db, "upgrade_requests"), {
+        userId: user.uid,
+        userEmail: user.email,
+        plan,
+        period: isYearly ? "yearly" : "monthly",
+        status: "pending",
+        createdAt: serverTimestamp()
+      });
+      alert(`Request sent! An admin will review your upgrade to the ${plan} plan shortly.`);
+      onClose();
+    } catch (error) {
+      console.error("Error requesting upgrade:", error);
+      alert("Failed to send request. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -129,8 +151,10 @@ export function PricingPopup({ isOpen, onClose }: PricingPopupProps) {
 
             <button
               onClick={() => handleSubscribe("basic")}
-              className="w-full py-3 bg-blue-500 text-white rounded-xl font-bold hover:bg-blue-600 transition-colors active:scale-[0.98]"
+              disabled={loading}
+              className="w-full py-3 bg-blue-500 text-white rounded-xl font-bold hover:bg-blue-600 transition-colors active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
             >
+              {loading && selectedPlan === 'basic' && <Loader2 size={18} className="animate-spin" />}
               Get Started
             </button>
           </div>
@@ -181,14 +205,16 @@ export function PricingPopup({ isOpen, onClose }: PricingPopupProps) {
               </li>
               <li className="flex items-center gap-3 text-sm text-[var(--text-main)]">
                 <Check size={16} className="text-purple-500 shrink-0" />
-                Advanced analytics
+                 Advanced analytics
               </li>
             </ul>
 
             <button
               onClick={() => handleSubscribe("premium")}
-              className="w-full py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-bold hover:opacity-90 transition-opacity active:scale-[0.98]"
+              disabled={loading}
+              className="w-full py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-bold hover:opacity-90 transition-opacity active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
             >
+              {loading && selectedPlan === 'premium' && <Loader2 size={18} className="animate-spin" />}
               Upgrade Now
             </button>
           </div>
