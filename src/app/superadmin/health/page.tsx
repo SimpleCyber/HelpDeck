@@ -3,279 +3,211 @@
 import { useEffect, useState } from "react";
 import { 
   RefreshCw, 
-  Zap,
-  CheckCircle,
+  Search,
+  CheckCircle2,
   XCircle,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  Server,
+  Database,
+  Activity
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ServiceStatus {
   name: string;
+  type: "database" | "cache" | "api";
   status: "healthy" | "unhealthy" | "checking";
   lastError?: string;
   lastChecked?: Date;
-  icon: string;
-  color: string;
+  latency?: number;
 }
 
 export default function HealthPage() {
   const [services, setServices] = useState<ServiceStatus[]>([
     { 
-      name: "Firebase Service", 
-      status: "checking", 
-      icon: "🔥",
-      color: "orange"
+      name: "Firebase Firestore", 
+      type: "database",
+      status: "checking" 
     },
     { 
       name: "Upstash Redis", 
-      status: "checking", 
-      icon: "⚡",
-      color: "emerald"
+      type: "cache",
+      status: "checking" 
     },
   ]);
   const [isRunningAll, setIsRunningAll] = useState(false);
 
-  const checkFirebase = async (): Promise<{ healthy: boolean; error?: string }> => {
+  const checkFirebase = async (): Promise<{ healthy: boolean; error?: string; latency: number }> => {
+    const start = Date.now();
     try {
-      // Simple check - try to access Firestore
       const { db } = await import("@/lib/firebase");
       const { collection, getDocs, limit, query } = await import("firebase/firestore");
-      
       const testQuery = query(collection(db, "users"), limit(1));
       await getDocs(testQuery);
-      
-      return { healthy: true };
+      return { healthy: true, latency: Date.now() - start };
     } catch (error: any) {
-      return { healthy: false, error: error.message || "Failed to connect to Firebase" };
+      return { healthy: false, error: error.message || "Connection failed", latency: 0 };
     }
   };
 
-  const checkUpstash = async (): Promise<{ healthy: boolean; error?: string }> => {
+  const checkUpstash = async (): Promise<{ healthy: boolean; error?: string; latency: number }> => {
+    const start = Date.now();
     try {
       const redisUrl = process.env.NEXT_PUBLIC_UPSTASH_REDIS_REST_URL;
       const redisToken = process.env.NEXT_PUBLIC_UPSTASH_REDIS_REST_TOKEN;
-      
-      if (!redisUrl || !redisToken) {
-        return { healthy: false, error: "Redis credentials not configured" };
-      }
+      if (!redisUrl || !redisToken) throw new Error("Credentials missing");
 
       const response = await fetch(`${redisUrl}/ping`, {
         headers: { Authorization: `Bearer ${redisToken}` }
       });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       
-      if (!response.ok) {
-        return { healthy: false, error: `Request failed with code ${response.status}` };
-      }
-      
-      return { healthy: true };
+      return { healthy: true, latency: Date.now() - start };
     } catch (error: any) {
-      return { healthy: false, error: error.message || "Failed to connect to Upstash" };
+      return { healthy: false, error: error.message || "Connection failed", latency: 0 };
     }
   };
 
   const runHealthCheck = async (serviceName: string) => {
-    setServices(prev => prev.map(s => 
-      s.name === serviceName ? { ...s, status: "checking" as const } : s
-    ));
-
-    let result: { healthy: boolean; error?: string };
+    setServices(prev => prev.map(s => s.name === serviceName ? { ...s, status: "checking" } : s));
     
-    if (serviceName === "Firebase Service") {
-      result = await checkFirebase();
-    } else if (serviceName === "Upstash Redis") {
-      result = await checkUpstash();
-    } else {
-      result = { healthy: false, error: "Unknown service" };
-    }
+    let result;
+    if (serviceName.includes("Firebase")) result = await checkFirebase();
+    else result = await checkUpstash();
 
-    setServices(prev => prev.map(s => 
-      s.name === serviceName 
-        ? { 
-            ...s, 
-            status: result.healthy ? "healthy" : "unhealthy",
-            lastError: result.error,
-            lastChecked: new Date()
-          } 
-        : s
-    ));
+    setServices(prev => prev.map(s => s.name === serviceName ? {
+      ...s,
+      status: result.healthy ? "healthy" : "unhealthy",
+      lastError: result.error,
+      latency: result.latency,
+      lastChecked: new Date()
+    } : s));
   };
 
   const runAllTests = async () => {
     setIsRunningAll(true);
-    
-    for (const service of services) {
-      await runHealthCheck(service.name);
-    }
-    
+    for (const s of services) await runHealthCheck(s.name);
     setIsRunningAll(false);
   };
 
-  useEffect(() => {
-    runAllTests();
-  }, []);
-
-  const getStatusIcon = (status: ServiceStatus["status"]) => {
-    switch (status) {
-      case "healthy":
-        return <CheckCircle size={18} className="text-emerald-500" />;
-      case "unhealthy":
-        return <XCircle size={18} className="text-red-500" />;
-      case "checking":
-        return <Loader2 size={18} className="text-blue-500 animate-spin" />;
-    }
-  };
+  useEffect(() => { runAllTests(); }, []);
 
   const healthyCount = services.filter(s => s.status === "healthy").length;
-  const totalCount = services.length;
 
   return (
-    <main className="flex-1 overflow-y-auto p-8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
-            <p className="text-sm text-[var(--text-muted)]">Admin / System Health</p>
-          </div>
-          <h1 className="text-3xl font-black text-[var(--text-main)]">System Health Monitor</h1>
-          <p className="text-[var(--text-muted)] mt-1">
-            Maintain and troubleshoot external API circuit breakers and automation status.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className={cn(
-            "flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm",
-            healthyCount === totalCount 
-              ? "bg-emerald-500/10 text-emerald-500"
-              : "bg-red-500/10 text-red-500"
-          )}>
-            <div className={cn(
-              "w-2 h-2 rounded-full animate-pulse",
-              healthyCount === totalCount ? "bg-emerald-500" : "bg-red-500"
-            )} />
-            Live State Monitor
-          </div>
-        </div>
-      </div>
-
-      {/* Service Connectivity Tests Section */}
-      <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-6 mb-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Zap size={20} className="text-yellow-500" />
-            <div>
-              <h2 className="font-bold text-[var(--text-main)]">Service Connectivity Tests</h2>
-              <p className="text-sm text-blue-500">Test all external service connections at once</p>
-            </div>
+    <main className="flex-1 overflow-y-auto bg-slate-50/50 p-8">
+      <div className="max-w-5xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+             <h1 className="text-2xl font-bold text-slate-900">System Health</h1>
+             <p className="text-sm text-slate-500">Monitor external service connectivity and latency.</p>
           </div>
           <button
             onClick={runAllTests}
             disabled={isRunningAll}
-            className={cn(
-              "flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white transition-all",
-              isRunningAll 
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-emerald-500 hover:bg-emerald-600 active:scale-95"
-            )}
+            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-colors shadow-sm shadow-blue-600/20 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isRunningAll ? (
-              <Loader2 size={18} className="animate-spin" />
-            ) : (
-              <Zap size={18} />
-            )}
-            {isRunningAll ? "Running..." : "Run All Tests"}
+            <RefreshCw size={16} className={cn(isRunningAll && "animate-spin")} />
+            {isRunningAll ? "Running Tests..." : "Run All Checks"}
           </button>
         </div>
 
-        {/* Service Cards Grid */}
+        {/* Global Status Banner */}
+        <div className={cn(
+          "rounded-2xl p-6 border shadow-sm flex items-center gap-6",
+          healthyCount === services.length 
+            ? "bg-emerald-50/50 border-emerald-100" 
+            : "bg-red-50/50 border-red-100"
+        )}>
+           <div className={cn(
+             "w-16 h-16 rounded-full flex items-center justify-center shrink-0",
+             healthyCount === services.length ? "bg-emerald-100 text-emerald-600" : "bg-red-100 text-red-600"
+           )}>
+             {healthyCount === services.length ? <Activity size={32} /> : <AlertTriangle size={32} />}
+           </div>
+           <div>
+             <h2 className={cn(
+               "text-lg font-bold mb-1",
+               healthyCount === services.length ? "text-emerald-900" : "text-red-900"
+             )}>
+               {healthyCount === services.length ? "All Systems Operational" : "System Issues Detected"}
+             </h2>
+             <p className={cn(
+               "text-sm font-medium",
+               healthyCount === services.length ? "text-emerald-700" : "text-red-700"
+             )}>
+               {healthyCount} / {services.length} services are responding normally.
+             </p>
+           </div>
+        </div>
+
+        {/* Service Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {services.map((service) => (
-            <div 
-              key={service.name}
-              className="bg-[var(--bg-main)] border border-[var(--border-color)] rounded-xl p-5"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  {getStatusIcon(service.status)}
-                  <div>
-                    <h3 className="font-bold text-[var(--text-main)] flex items-center gap-2">
-                      {service.name}
-                      {service.status === "healthy" && (
-                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                      )}
-                      {service.status === "unhealthy" && (
-                        <span className="w-2 h-2 rounded-full bg-red-500" />
-                      )}
-                    </h3>
-                    <p className="text-sm text-[var(--text-muted)]">
-                      {service.status === "healthy" 
-                        ? "System is healthy and processing requests normally."
-                        : service.status === "unhealthy"
-                        ? "Service is experiencing issues."
-                        : "Checking service status..."}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => runHealthCheck(service.name)}
-                  disabled={service.status === "checking"}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-bold text-sm hover:bg-blue-600 transition-colors disabled:opacity-50"
-                >
-                  <RefreshCw size={14} className={service.status === "checking" ? "animate-spin" : ""} />
-                  Reset
-                </button>
+            <div key={service.name} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 group hover:border-blue-200 transition-colors">
+              <div className="flex items-start justify-between mb-6">
+                 <div className="flex items-center gap-4">
+                   <div className={cn(
+                     "w-12 h-12 rounded-xl flex items-center justify-center",
+                     service.type === 'database' ? "bg-orange-50 text-orange-600" : "bg-emerald-50 text-emerald-600"
+                   )}>
+                     {service.type === 'database' ? <Database size={24} /> : <Server size={24} />}
+                   </div>
+                   <div>
+                     <h3 className="font-bold text-slate-900">{service.name}</h3>
+                     <p className="text-xs font-semibold text-slate-400 upper tracking-wider">{service.type}</p>
+                   </div>
+                 </div>
+                 <div className={cn(
+                   "px-3 py-1 rounded-full text-xs font-bold flex items-center gap-2 border",
+                   service.status === "healthy" ? "bg-emerald-50 text-emerald-600 border-emerald-100" :
+                   service.status === "unhealthy" ? "bg-red-50 text-red-600 border-red-100" :
+                   "bg-blue-50 text-blue-600 border-blue-100"
+                 )}>
+                   {service.status === "checking" && <Loader2 size={12} className="animate-spin" />}
+                   {service.status === "healthy" && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+                   {service.status === "unhealthy" && <div className="w-1.5 h-1.5 rounded-full bg-red-500" />}
+                   {service.status === "healthy" ? "Healthy" : service.status === "unhealthy" ? "Failed" : "Checking"}
+                 </div>
               </div>
 
-              {/* Error Display */}
-              {service.status === "unhealthy" && service.lastError && (
-                <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                  <div className="flex items-center gap-2 text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wider mb-1">
-                    <AlertTriangle size={12} />
-                    Last Captured Error
-                  </div>
-                  <p className="text-sm text-red-500 font-mono">
-                    {service.lastError}
-                  </p>
+              {/* Metrics */}
+              <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-slate-50">
+                <div>
+                   <span className="text-xs text-slate-400 font-medium">Latency</span>
+                   <div className="font-mono font-bold text-slate-700 text-lg">
+                      {service.latency ? `${service.latency}ms` : '-'}
+                   </div>
                 </div>
-              )}
+                <div className="text-right">
+                   <span className="text-xs text-slate-400 font-medium">Last Checked</span>
+                   <div className="text-xs font-semibold text-slate-600 mt-1">
+                      {service.lastChecked ? service.lastChecked.toLocaleTimeString() : 'Never'}
+                   </div>
+                </div>
+              </div>
 
-              {/* Last Checked */}
-              {service.lastChecked && (
-                <div className="mt-3 text-xs text-[var(--text-muted)]">
-                  Last checked: {service.lastChecked.toLocaleTimeString()}
-                </div>
+              {/* Error Message */}
+              {service.status === "unhealthy" && service.lastError && (
+                 <div className="mt-4 p-3 bg-red-50 rounded-lg border border-red-100 text-xs text-red-600 font-medium flex items-start gap-2">
+                    <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+                    {service.lastError}
+                 </div>
               )}
+              
+              <div className="mt-4 flex justify-end">
+                 <button 
+                    onClick={() => runHealthCheck(service.name)}
+                    disabled={service.status === "checking"}
+                    className="text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline disabled:opacity-50"
+                 >
+                    Retest Connection
+                 </button>
+              </div>
             </div>
           ))}
-        </div>
-      </div>
-
-      {/* Health Summary */}
-      <div className={cn(
-        "p-6 rounded-2xl border",
-        healthyCount === totalCount 
-          ? "bg-emerald-500/10 border-emerald-500/30"
-          : "bg-red-500/10 border-red-500/30"
-      )}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            {healthyCount === totalCount ? (
-              <CheckCircle size={32} className="text-emerald-500" />
-            ) : (
-              <AlertTriangle size={32} className="text-red-500" />
-            )}
-            <div>
-              <h3 className="font-bold text-[var(--text-main)]">
-                {healthyCount === totalCount 
-                  ? "All Systems Operational"
-                  : `${totalCount - healthyCount} Service(s) Require Attention`}
-              </h3>
-              <p className="text-sm text-[var(--text-muted)]">
-                {healthyCount}/{totalCount} services are healthy
-              </p>
-            </div>
-          </div>
         </div>
       </div>
     </main>

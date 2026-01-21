@@ -34,6 +34,7 @@ import { useTheme } from "@/lib/theme-context";
 import { doc } from "firebase/firestore";
 import { Trash2, Sun, Moon, MoreVertical } from "lucide-react";
 import { HelpDeckLogo } from "@/components/common/HelpDeckLogo";
+import { PricingPopup } from "@/components/admin/PricingPopup";
 
 export function AdminSidebar({ workspaceId, activeTab, ownerId: propOwnerId }: { workspaceId?: string, activeTab: string, ownerId?: string }) {
   const { user, userProfile, logout } = useAuth();
@@ -43,6 +44,7 @@ export function AdminSidebar({ workspaceId, activeTab, ownerId: propOwnerId }: {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showPricing, setShowPricing] = useState(false);
   
   // Resolve ownerId: from prop, then from search params, then from current user
   const resolvedOwnerId = propOwnerId || searchParams.get("owner") || user?.uid || "";
@@ -419,7 +421,13 @@ export function AdminSidebar({ workspaceId, activeTab, ownerId: propOwnerId }: {
                  <div className="text-sm font-black text-[var(--text-main)] truncate">
                    @{user?.displayName?.split(' ').join('_') || user?.email?.split('@')[0]}
                  </div>
-                 <div className="text-[10px] font-bold text-amber-600 flex items-center gap-1 uppercase tracking-wider">
+                 <div 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowPricing(true);
+                    }}
+                    className="text-[10px] font-bold text-amber-600 flex items-center gap-1 uppercase tracking-wider cursor-pointer hover:text-amber-700 hover:underline"
+                  >
                    <Crown size={10} />
                    {planLabel}
                  </div>
@@ -457,6 +465,7 @@ export function AdminSidebar({ workspaceId, activeTab, ownerId: propOwnerId }: {
            </div>
         )}
       </div>
+      <PricingPopup isOpen={showPricing} onClose={() => setShowPricing(false)} />
     </div>
   );
 }
