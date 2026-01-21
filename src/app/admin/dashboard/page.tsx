@@ -120,10 +120,10 @@ export default function AdminDashboard() {
               </div>
               <div className="flex items-center gap-4 mb-2">
                 {/* Subscription Badge */}
-                {/* <div className="flex items-center gap-2 px-4 py-2 border border-amber-600 dark:border-amber-700 rounded-xl shadow-sm">
+                <div className="flex items-center gap-2 px-4 py-2 border border-amber-600 dark:border-amber-700 rounded-xl shadow-sm">
                   <Crown size={16} className="text-white dark:text-amber-400" />
                   <span className="text-sm font-bold text-white dark:text-amber-400">{planLabel} Plan</span>
-                </div> */}
+                </div>
               </div>
             </div>
 
