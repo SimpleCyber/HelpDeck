@@ -19,43 +19,53 @@ function WorkspaceSettingsContent() {
   const { workspaceId } = useParams() as { workspaceId: string };
   const searchParams = useSearchParams();
   const ownerId = searchParams.get("owner") || user?.uid || "";
-  
+
   const [ws, setWs] = useState<any>(null);
-  const [formData, setFormData] = useState({ name: "", color: "#3b82f6", logo: "" });
+  const [formData, setFormData] = useState({
+    name: "",
+    color: "#3b82f6",
+    logo: "",
+    headerColor: "",
+  });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!authL && !user) router.push("/admin");
     if (workspaceId && ownerId) {
-      return onSnapshot(doc(db, "users", ownerId, "workspaces", workspaceId), (s: any) => {
-        const data = s.data();
-        if (data) {
-          setWs(data);
-          setFormData(prev => {
-            if (!prev.name) {
-               return { 
-                name: data.settings?.name || data.name, 
-                color: data.settings?.color || "#3b82f6", 
-                logo: data.settings?.logo || "" 
-              };
-            }
-            return prev;
-          });
-        }
-      });
+      return onSnapshot(
+        doc(db, "users", ownerId, "workspaces", workspaceId),
+        (s: any) => {
+          const data = s.data();
+          if (data) {
+            setWs(data);
+            setFormData((prev) => {
+              if (!prev.name) {
+                return {
+                  name: data.settings?.name || data.name,
+                  color: data.settings?.color || "#3b82f6",
+                  logo: data.settings?.logo || "",
+                  headerColor: data.settings?.headerColor || "",
+                };
+              }
+              return prev;
+            });
+          }
+        },
+      );
     }
   }, [workspaceId, ownerId, user, authL, router]);
 
   const handleSave = async () => {
-    if (!ws || (ws.ownerId !== user?.uid && user?.email !== ws.ownerEmail)) return;
+    if (!ws || (ws.ownerId !== user?.uid && user?.email !== ws.ownerEmail))
+      return;
     setSaving(true);
     try {
       const wsRef = doc(db, "users", ownerId, "workspaces", workspaceId);
       await updateDoc(wsRef, {
         name: formData.name,
-        settings: formData
+        settings: formData,
       });
-      
+
       // Invalidate workspace cache
       await invalidateCache(cacheKeys.workspace(workspaceId));
     } catch (err) {
@@ -76,47 +86,103 @@ function WorkspaceSettingsContent() {
       ) : (
         <>
           <main className="flex-1 overflow-y-auto p-12">
-             <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <header className="flex items-center justify-between">
-                   <div>
-                     <h1 className="text-3xl font-black text-[var(--text-main)] mb-2">Design & Appearance</h1>
-                     <p className="text-[var(--text-muted)]">Customize how your help desk looks to your users.</p>
-                   </div>
-                   {isOwner && (
-                      <Button 
-                         icon={Save} 
-                         loading={saving} 
-                         onClick={handleSave}
-                         className="h-11 px-6 rounded-xl shadow-lg shadow-blue-500/20"
-                      >
-                        Save Changes
-                      </Button>
-                   )}
-                </header>
+            <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <header className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl font-black text-[var(--text-main)] mb-2">
+                    Design & Appearance
+                  </h1>
+                  <p className="text-[var(--text-muted)]">
+                    Customize how your help desk looks to your users.
+                  </p>
+                </div>
+                {isOwner && (
+                  <Button
+                    icon={Save}
+                    loading={saving}
+                    onClick={handleSave}
+                    className="h-11 px-6 rounded-xl shadow-lg shadow-blue-500/20"
+                  >
+                    Save Changes
+                  </Button>
+                )}
+              </header>
 
-                <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[32px] p-8 space-y-8 shadow-sm">
-                  <LogoUpload currentLogo={formData.logo} onUpload={logo => setFormData({ ...formData, logo })} />
-                  <div className="grid grid-cols-2 gap-8">
-                    <Input label="Workspace Name" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
-                    <div className="space-y-2">
-                       <label className="block text-sm font-semibold text-[var(--text-main)]">Brand Color</label>
-                       <div className="flex items-center gap-4">
-                          <input 
-                            type="color" 
-                            value={formData.color} 
-                            onChange={e => setFormData({ ...formData, color: e.target.value })}
-                            className="w-12 h-12 rounded-xl border-none p-0 overflow-hidden cursor-pointer shadow-sm"
-                          />
-                          <div className="flex-1 font-mono text-sm font-bold bg-[var(--bg-main)] px-4 py-3 rounded-xl border border-[var(--border-color)]">
-                            {formData.color.toUpperCase()}
-                          </div>
-                       </div>
+              <div className="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-[32px] p-8 space-y-8 shadow-sm">
+                <LogoUpload
+                  currentLogo={formData.logo}
+                  onUpload={(logo) => setFormData({ ...formData, logo })}
+                />
+                <div className="grid grid-cols-2 gap-8">
+                  <Input
+                    label="Workspace Name"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                  />
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-[var(--text-main)]">
+                      Brand Color
+                    </label>
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="color"
+                        value={formData.color}
+                        onChange={(e) =>
+                          setFormData({ ...formData, color: e.target.value })
+                        }
+                        className="w-12 h-12 rounded-xl border-none p-0 overflow-hidden cursor-pointer shadow-sm"
+                      />
+                      <div className="flex-1 font-mono text-sm font-bold bg-[var(--bg-main)] px-4 py-3 rounded-xl border border-[var(--border-color)]">
+                        {formData.color.toUpperCase()}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Header Color */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-sm font-semibold text-[var(--text-main)]">
+                        Header Color
+                      </label>
+                      <button
+                        onClick={() =>
+                          setFormData({ ...formData, headerColor: "" })
+                        }
+                        className="text-xs text-blue-500 hover:underline"
+                        hidden={!formData.headerColor}
+                      >
+                        Reset to Brand
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="color"
+                        value={formData.headerColor || formData.color}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            headerColor: e.target.value,
+                          })
+                        }
+                        className="w-12 h-12 rounded-xl border-none p-0 overflow-hidden cursor-pointer shadow-sm"
+                      />
+                      <div className="flex-1 font-mono text-sm font-bold bg-[var(--bg-main)] px-4 py-3 rounded-xl border border-[var(--border-color)]">
+                        {(formData.headerColor || formData.color).toUpperCase()}
+                      </div>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                <DesignPreview color={formData.color} name={formData.name} logo={formData.logo} />
-             </div>
+              <DesignPreview
+                color={formData.color}
+                name={formData.name}
+                logo={formData.logo}
+                headerColor={formData.headerColor}
+              />
+            </div>
           </main>
         </>
       )}
@@ -126,11 +192,13 @@ function WorkspaceSettingsContent() {
 
 export default function WorkspaceSettings() {
   return (
-    <Suspense fallback={
-      <div className="flex h-screen items-center justify-center bg-[var(--bg-main)]">
-        <Loader2 className="animate-spin h-10 w-10 text-blue-500" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex h-screen items-center justify-center bg-[var(--bg-main)]">
+          <Loader2 className="animate-spin h-10 w-10 text-blue-500" />
+        </div>
+      }
+    >
       <WorkspaceSettingsContent />
     </Suspense>
   );

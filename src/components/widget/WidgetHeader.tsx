@@ -2,23 +2,34 @@
 
 import { MessageSquare, X } from "lucide-react";
 
-export function WidgetHeader({ name, logo, color, onCollapse }: { name: string, logo: string, color: string, onCollapse: () => void }) {
+export function WidgetHeader({
+  name,
+  logo,
+  color,
+  headerColor,
+  onCollapse,
+}: {
+  name: string;
+  logo: string;
+  color: string;
+  headerColor?: string;
+  onCollapse: () => void;
+}) {
   return (
-    <div className="relative pt-12 pb-5 px-6 bg-[#171717] overflow-hidden shrink-0">
-      {/* Subtle Noise Pattern Overlay */}
-      <div className="absolute inset-0 noise-pattern pointer-events-none" />
-      
+    <div
+      className="relative pt-12 pb-5 px-6 overflow-hidden shrink-0"
+      style={{ backgroundColor: headerColor || color }}
+    >
       {/* Close Button - Top Right */}
-      <button 
+      <button
         onClick={onCollapse}
         className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition-all z-30"
       >
         <X size={18} strokeWidth={2} />
       </button>
-      
+
       {/* Top Badge with Tooltip */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 group/chat z-20">
-
         <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-black text-white text-[10px] rounded-lg opacity-0 group-hover/chat:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl border border-white/10">
           Help Desk
         </div>
@@ -29,9 +40,16 @@ export function WidgetHeader({ name, logo, color, onCollapse }: { name: string, 
         <div className="relative group/logo">
           <div className="w-12 h-12 rounded-full border-2 border-[#171717] bg-white overflow-hidden flex items-center justify-center shadow-[0_0_20px_rgba(0,0,0,0.3)] transition-transform hover:scale-105">
             {logo ? (
-              <img src={logo} alt={name} className="w-full h-full object-cover" />
+              <img
+                src={logo}
+                alt={name}
+                className="w-full h-full object-cover"
+              />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-white font-black text-xl" style={{ backgroundColor: color }}>
+              <div
+                className="w-full h-full flex items-center justify-center text-white font-black text-xl"
+                style={{ backgroundColor: color }}
+              >
                 {name[0]}
               </div>
             )}
@@ -42,10 +60,14 @@ export function WidgetHeader({ name, logo, color, onCollapse }: { name: string, 
         </div>
 
         <div className="space-y-1">
-          <h2 className="text-white font-bold text-sm tracking-tight leading-none pt-2">Questions? Chat with us!</h2>
+          <h2 className="text-white font-bold text-sm tracking-tight leading-none pt-2">
+            Questions? Chat with us!
+          </h2>
           <div className="flex items-center justify-center gap-1.5">
             <span className="w-1.5 h-1.5 bg-[#22c55e] rounded-full" />
-            <span className="text-[11px] text-[#a3a3a3] font-medium">Typically replies under an hour</span>
+            <span className="text-[11px] text-[#a3a3a3] font-medium">
+              Typically replies under an hour
+            </span>
           </div>
         </div>
       </div>

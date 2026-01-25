@@ -275,7 +275,13 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
     );
   }
 
-  const { color = "#3b82f6", name = ws.name, logo = "" } = ws.settings || {};
+  const {
+    color = "#3b82f6",
+    name = ws.name,
+    logo = "",
+    headerColor,
+    chatBackgroundColor,
+  } = ws.settings || {};
 
   /* -------------------------------------------------- */
   /* ✅ MAIN RENDER                                     */
@@ -288,6 +294,7 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
             name={name}
             logo={logo}
             color={color}
+            headerColor={headerColor}
             onCollapse={toggle}
           />
 
@@ -367,6 +374,7 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
                   }
                 }}
                 color={color}
+                backgroundColor={chatBackgroundColor}
               />
             )}
           </div>
