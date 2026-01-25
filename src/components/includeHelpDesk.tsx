@@ -14,8 +14,8 @@ export default function HelpDeckWidget({ user }: { user: any }) {
       name2: "custom data",
       plan: "pro",
       role: "admin",
-      company: "Acme Corp",
-      plan_expiry: "2024-12-31",
+      company: "Acme Corp cyr",
+      plan_expiry: "2024-12-1",
     };
     const baseUrl = process.env.NEXT_PUBLIC_URL || 'https://help-deck-gamma.vercel.app';
     const s = document.createElement("script");

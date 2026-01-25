@@ -172,7 +172,7 @@ export function UserSidebar({
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-8">
+      <div className="flex-1 overflow-y-auto p-6 space-y-8 no-scrollbar">
         {/* Profile Card */}
         <div className="flex flex-col items-center p-6 bg-[var(--bg-main)] rounded-2xl border border-[var(--border-color)]">
           <div className="w-20 h-20 bg-blue-600 rounded-2xl flex items-center justify-center text-white font-black text-3xl shadow-lg shadow-blue-500/20 mb-4">

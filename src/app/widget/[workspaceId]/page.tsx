@@ -79,8 +79,15 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
     if (!ownerId) return;
 
     // Extract standard fields vs custom fields
-    const { name, email, userId, ...rest } = u;
+    const { name, email, userId, forceUpdate, ...rest } = u;
     const customData = rest;
+
+    // OPTIMIZATION: Check if data actually changed
+    const currentHash = JSON.stringify(customData);
+    const lastHash = localStorage.getItem(
+      `helpdeck_hash_${workspaceId}_${userId || email}`,
+    );
+    const shouldUpdate = forceUpdate || currentHash !== lastHash;
 
     const q = query(
       collection(
@@ -101,8 +108,9 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
       setConvId(docId);
       localStorage.setItem(`crisp_conv_${workspaceId}`, docId);
 
-      // Update custom data for existing user
-      if (Object.keys(customData).length > 0) {
+      // Update custom data ONLY if changed or forced
+      if (shouldUpdate && Object.keys(customData).length > 0) {
+        console.log("HelpDeck: Syncing user data...");
         await updateDoc(
           doc(
             db,
@@ -117,9 +125,20 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
             customData: customData,
           },
         );
+        localStorage.setItem(
+          `helpdeck_hash_${workspaceId}_${userId || email}`,
+          currentHash,
+        );
+      } else {
+        console.log("HelpDeck: Data unchanged, skipping sync.");
       }
     } else {
-      onStart(name || "User", email || "", userId || null, customData);
+      // New user, always save and store hash
+      await onStart(name || "User", email || "", userId || null, customData);
+      localStorage.setItem(
+        `helpdeck_hash_${workspaceId}_${userId || email}`,
+        currentHash,
+      );
     }
   };
 

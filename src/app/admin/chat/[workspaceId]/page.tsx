@@ -438,7 +438,7 @@ function AdminChatContent() {
                 <Search size={16} />
               </div>
             </header>
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto no-scrollbar">
               {convs.length > 0 ? (
                 convs.map((c, idx) => {
                   const isLocked = idx >= maxCustomers;
@@ -525,7 +525,7 @@ function AdminChatContent() {
 
                 <div
                   ref={scrollRef}
-                  className="flex-1 overflow-y-auto p-10 space-y-8 scroll-smooth"
+                  className="flex-1 overflow-y-auto p-10 space-y-8 scroll-smooth no-scrollbar"
                 >
                   {hasMore && (
                     <div className="flex justify-center pb-4">
