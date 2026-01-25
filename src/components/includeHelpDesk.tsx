@@ -10,9 +10,14 @@ export default function HelpDeckWidget({ user }: { user: any }) {
     (window as any).HELPDECK_USER = {
       name: user.displayName || user.email?.split('@')[0] || "User",
       email: user.email,
-      userId: user.uid
+      userId: user.uid,
+      name2: "custom data",
+      plan: "pro",
+      role: "admin",
+      company: "Acme Corp",
+      plan_expiry: "2024-12-31",
     };
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_URL || '';
+    const baseUrl = process.env.NEXT_PUBLIC_URL || 'https://help-deck-gamma.vercel.app';
     const s = document.createElement("script");
     s.src = `${baseUrl}/widget-loader.js`;
     s.async = true;
