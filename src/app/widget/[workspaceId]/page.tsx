@@ -252,7 +252,7 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
       <div id="helpdeck-root">
         <div className="fixed bottom-2 right-2 flex flex-col items-end">
           {isOpen && (
-            <div className="w-80 h-[400px] bg-[#fafafa] rounded-2xl shadow-2xl flex flex-col items-center justify-center p-8 mb-3 relative">
+            <div className="w-[90vw] max-w-[380px] h-fit max-h-[80vh] bg-[#fafafa] rounded-2xl shadow-2xl flex flex-col items-center justify-center p-8 mb-3 relative">
               <button
                 onClick={toggle}
                 className="absolute top-4 right-4 p-2 rounded-xl text-gray-400 hover:bg-gray-100 transition-colors"
@@ -289,7 +289,7 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
   return (
     <div id="helpdeck-root">
       {isOpen ? (
-        <div className="fixed w-[380px] h-[640px] shadow-2xl rounded-[16px] flex flex-col">
+        <div className="fixed inset-0 flex flex-col shadow-2xl overflow-hidden">
           <WidgetHeader
             name={name}
             logo={logo}

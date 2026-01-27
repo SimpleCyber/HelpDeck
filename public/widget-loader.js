@@ -60,15 +60,33 @@
     iframe.style.pointerEvents = "auto";
   };
 
+  const updatePanelStyle = () => {
+    if (iframe.dataset.state === "panel") {
+      if (window.innerWidth < 640) {
+        iframe.style.width = "100vw";
+        iframe.style.height = "100vh";
+        iframe.style.bottom = "0px";
+        iframe.style.right = "0px";
+        iframe.style.borderRadius = "0px";
+      } else {
+        iframe.style.width = "380px";
+        iframe.style.height = "640px";
+        iframe.style.bottom = "8px";
+        iframe.style.right = "8px";
+        iframe.style.borderRadius = "16px";
+      }
+    }
+  };
+
   const applyPanel = () => {
     iframe.dataset.state = "panel";
-    iframe.style.width = "380px";
-    iframe.style.height = "640px";
-    iframe.style.borderRadius = "16px";
+    updatePanelStyle();
 
     // Allow normal layout when expanded
     iframe.style.overflow = "visible";
   };
+
+  window.addEventListener("resize", updatePanelStyle);
 
   // Initial state
   applyBubble();
