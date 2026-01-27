@@ -155,7 +155,7 @@
     try {
       // FCP
       new PerformanceObserver((entryList) => {
-        for (constentry of entryList.getEntriesByName(
+        for (const entry of entryList.getEntriesByName(
           "first-contentful-paint",
         )) {
           sendEvent("vitals", {

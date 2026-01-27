@@ -33,7 +33,7 @@ export default function AnalyticsPage() {
             Analytics
           </h1>
           <p className="text-[var(--text-muted)]">
-            Insights into your users' behavior and performance.
+            Insights into your users' behavior and performance of your website.
           </p>
         </header>
 

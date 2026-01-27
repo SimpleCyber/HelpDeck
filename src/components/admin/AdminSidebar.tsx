@@ -160,7 +160,7 @@ export function AdminSidebar({
     },
     {
       id: "analytics",
-      label: "Analytics",
+      label: "Web Analytics",
       icon: BarChart3,
       path: `/admin/workspace/${workspaceId}/analytics?owner=${resolvedOwnerId}`,
       enabled: !!workspaceId,
