@@ -12,7 +12,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const params = useParams();
   const searchParams = useSearchParams();
-  
+
   const workspaceId = params.workspaceId as string | undefined;
   const ownerId = searchParams.get("owner") || undefined;
 
@@ -22,7 +22,8 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   if (pathname.includes("/admin/dashboard")) activeTab = "dashboard";
   if (pathname.includes("/members")) activeTab = "members";
   if (pathname.includes("/install")) activeTab = "installation";
-  if (pathname.endsWith(`/workspace/${workspaceId}`)) activeTab = "settings";
+  if (pathname.includes("/analytics")) activeTab = "analytics";
+  if (pathname.endsWith(`/workspace/${workspaceId}`)) activeTab = "design";
 
   // Check if we are in a sub-page that doesn't need the sidebar (e.g. login)
   // But this layout is under /app/admin/
@@ -31,29 +32,31 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen bg-[var(--bg-main)] overflow-hidden">
-      <AdminSidebar 
-        activeTab={activeTab} 
-        workspaceId={workspaceId} 
-        ownerId={ownerId} 
+      <AdminSidebar
+        activeTab={activeTab}
+        workspaceId={workspaceId}
+        ownerId={ownerId}
       />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {children}
-      </div>
+      <div className="flex-1 flex flex-col overflow-hidden">{children}</div>
       <HelpDeckWidget user={user} />
     </div>
   );
 }
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <Suspense fallback={
-      <div className="flex h-screen items-center justify-center bg-[var(--bg-main)]">
-        <Loader2 className="animate-spin h-10 w-10 text-blue-500" />
-      </div>
-    }>
-      <AdminLayoutInner>
-        {children}
-      </AdminLayoutInner>
+    <Suspense
+      fallback={
+        <div className="flex h-screen items-center justify-center bg-[var(--bg-main)]">
+          <Loader2 className="animate-spin h-10 w-10 text-blue-500" />
+        </div>
+      }
+    >
+      <AdminLayoutInner>{children}</AdminLayoutInner>
     </Suspense>
   );
 }
