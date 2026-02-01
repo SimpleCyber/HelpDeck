@@ -5,8 +5,8 @@ export default function HelpDeckWidget({ user }: { user: any }) {
   useEffect(() => {
     if (!user) return;
 
-    (window as any).CRISP_WEBSITE_ID = "ws_1769008955071_a4oc3dqee";
-    (window as any).CRISP_OWNER_ID = "7rXNAqOZC6e9lfdfNdh2VJoTtT63";
+    (window as any).CRISP_WEBSITE_ID = "ws_1769947986159_l67ogsya2";
+    (window as any).CRISP_OWNER_ID = "c77uN9hZnAd7NUCxmcspVJxPapm1";
     (window as any).HELPDECK_USER = {
       name: user.displayName || user.email?.split('@')[0] || "User",
       email: user.email,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Smile, Paperclip, Mic, Send } from "lucide-react";
+import { Smile, Paperclip, Mic, Send, Zap } from "lucide-react";
 import { MessageBubble } from "@/components/common/MessageBubble";
 import { EmojiPicker } from "./EmojiPicker";
 import { cn } from "@/lib/utils";
@@ -12,11 +12,19 @@ export function WidgetChat({
   onSend,
   color,
   backgroundColor,
+  aiMode,
+  setAiMode,
+  showAiToggle,
+  isTyping,
 }: {
   messages: any[];
   onSend: (text: string) => void;
   color: string;
   backgroundColor?: string;
+  aiMode: boolean;
+  setAiMode: (mode: boolean) => void;
+  showAiToggle?: boolean;
+  isTyping?: boolean;
 }) {
   const [text, setText] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
@@ -86,8 +94,29 @@ export function WidgetChat({
         </div>
 
         {messages.map((m) => (
-          <MessageBubble key={m.id} message={m} color={color} />
+          <MessageBubble
+            key={m.id}
+            message={m}
+            color={color}
+            isAi={m.sender === "support"}
+          />
         ))}
+
+        {isTyping && (
+          <div className="flex flex-col items-start animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="flex items-center gap-2 mb-1.5 pl-1 opacity-60">
+              <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+              <span className="text-[10px] font-black text-[var(--text-muted)] tracking-widest uppercase">
+                AI is thinking...
+              </span>
+            </div>
+            <div className="bg-slate-50/80 backdrop-blur-sm rounded-[24px] rounded-tl-none border border-gray-100 px-5 py-3.5 flex gap-1">
+              <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
+              <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
+              <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" />
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="px-6 py-4 pb-8 bg-transparent flex flex-col gap-4">
@@ -146,12 +175,30 @@ export function WidgetChat({
               >
                 <Paperclip size={20} />
               </button>
-              <button
-                type="button"
-                className="hover:text-slate-600 transition-colors"
-              >
-                <Mic size={20} />
-              </button>
+
+              {showAiToggle && (
+                <div className="flex items-center gap-2 px-1 relative group">
+                  <button
+                    type="button"
+                    onClick={() => setAiMode(!aiMode)}
+                    className={cn(
+                      "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all duration-300",
+                      aiMode
+                        ? "bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20"
+                        : "bg-white border-slate-100 text-slate-400 hover:border-slate-200",
+                    )}
+                  >
+                    <Zap
+                      size={12}
+                      fill={aiMode ? "currentColor" : "none"}
+                      className={cn(aiMode && "animate-pulse")}
+                    />
+                    <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap">
+                      AI {aiMode ? "On" : "Off"}
+                    </span>
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-3">

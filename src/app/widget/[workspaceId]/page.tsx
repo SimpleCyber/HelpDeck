@@ -35,6 +35,9 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
   const [msgs, setMsgs] = useState<any[]>([]);
   const [convId, setConvId] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [convData, setConvData] = useState<any>(null);
+  const [aiMode, setAiMode] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
 
   /* -------------------------------------------------- */
   /* GLOBAL iframe safety                               */
@@ -180,7 +183,10 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
       ),
       (s) => {
         const data = s.data();
-        if (data) setUnreadCount(data.unreadCountUser || 0);
+        if (data) {
+          setUnreadCount(data.unreadCountUser || 0);
+          setConvData(data);
+        }
       },
     );
   }, [convId, workspaceId, ownerId]);
@@ -318,6 +324,7 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
                   const convSnap = await getDoc(convRef);
                   const oldStatus = convSnap.data()?.status;
 
+                  // Add user message
                   await addDoc(
                     collection(
                       db,
@@ -372,9 +379,70 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
                       1,
                     );
                   }
+
+                  // 🔥 AI MODE LOGIC
+                  if (aiMode && !isImage) {
+                    setIsTyping(true);
+                    try {
+                      const aiRes = await fetch("/api/ai/respond", {
+                        method: "POST",
+                        body: JSON.stringify({
+                          workspaceId,
+                          ownerId,
+                          message: text,
+                          userName: convData?.userName || "Guest",
+                          websiteName: name || "this website",
+                          history: msgs.slice(-5).map((m) => ({
+                            role: m.sender === "user" ? "user" : "model",
+                            parts: [{ text: m.text }],
+                          })),
+                        }),
+                      });
+                      const aiData = await aiRes.json();
+
+                      if (aiData.text) {
+                        // Add AI message to Firestore
+                        await addDoc(
+                          collection(
+                            db,
+                            "users",
+                            ownerId,
+                            "workspaces",
+                            workspaceId,
+                            "conversations",
+                            convId!,
+                            "messages",
+                          ),
+                          {
+                            text: aiData.text,
+                            sender: "support", // Use support sender for AI
+                            createdAt: serverTimestamp(),
+                          },
+                        );
+
+                        // Update conversation last message
+                        await updateDoc(convRef, {
+                          lastMessage: aiData.text,
+                          lastUpdatedAt: serverTimestamp(),
+                        });
+                        setIsTyping(false);
+                      }
+                    } catch (err) {
+                      console.error("AI Response Error:", err);
+                      setIsTyping(false);
+                    }
+                  }
                 }}
                 color={color}
                 backgroundColor={chatBackgroundColor}
+                aiMode={aiMode}
+                setAiMode={setAiMode}
+                showAiToggle={
+                  !!(
+                    ws?.aiSettings?.aiWebsiteInfo && ws?.aiSettings?.aiGeminiKey
+                  )
+                }
+                isTyping={isTyping}
               />
             )}
           </div>

@@ -23,6 +23,7 @@ import {
   Crown,
   Shield,
   BarChart3,
+  Zap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -163,6 +164,13 @@ export function AdminSidebar({
       label: "Web Analytics",
       icon: BarChart3,
       path: `/admin/workspace/${workspaceId}/analytics?owner=${resolvedOwnerId}`,
+      enabled: !!workspaceId,
+    },
+    {
+      id: "ai",
+      label: "AI Automation",
+      icon: Zap,
+      path: `/admin/workspace/${workspaceId}/ai?owner=${resolvedOwnerId}`,
       enabled: !!workspaceId,
     },
     {
