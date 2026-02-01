@@ -153,6 +153,74 @@ function AISettingsContent() {
                     </div>
                   </div>
 
+                  {/* URL Scanner Section */}
+                  <div className="p-8 bg-slate-50/50 rounded-[32px] border border-slate-100 space-y-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Globe size={18} className="text-blue-500" />
+                      <h3 className="text-sm font-black text-slate-700 uppercase tracking-widest">
+                        Magic Website Scanner
+                      </h3>
+                    </div>
+                    <div className="flex gap-3">
+                      <div className="flex-1 relative">
+                        <Input
+                          placeholder="https://yourwebsite.com"
+                          className="pl-12 rounded-2xl h-12"
+                          id="scanUrl"
+                        />
+                        <Globe
+                          className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300"
+                          size={18}
+                        />
+                      </div>
+                      <Button
+                        onClick={async () => {
+                          const urlInput = document.getElementById(
+                            "scanUrl",
+                          ) as HTMLInputElement;
+                          const url = urlInput?.value;
+                          if (!url) return;
+
+                          const btn =
+                            document.activeElement as HTMLButtonElement;
+                          btn.disabled = true;
+                          const originalText = btn.innerText;
+                          btn.innerText = "Scanning...";
+
+                          try {
+                            const res = await fetch("/api/ai/scan", {
+                              method: "POST",
+                              body: JSON.stringify({ url }),
+                            });
+                            const data = await res.json();
+                            if (data.text) {
+                              setFormData((prev) => ({
+                                ...prev,
+                                aiWebsiteInfo: (
+                                  prev.aiWebsiteInfo +
+                                  "\n\n" +
+                                  data.text
+                                ).trim(),
+                              }));
+                            }
+                          } catch (err) {
+                            console.error("Scan failed:", err);
+                          } finally {
+                            btn.disabled = false;
+                            btn.innerText = originalText;
+                          }
+                        }}
+                        className="h-12 px-6 rounded-2xl bg-blue-600 text-white hover:bg-blue-700"
+                      >
+                        Scan Website
+                      </Button>
+                    </div>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider pl-1">
+                      We'll fetch meta data and content to auto-fill the context
+                      below.
+                    </p>
+                  </div>
+
                   <textarea
                     value={formData.aiWebsiteInfo}
                     onChange={(e) =>
