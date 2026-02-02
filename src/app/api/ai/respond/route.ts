@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     // Usage tracking logic
     let usage = aiSettings.modelUsage || { version: 1, count: 0 };
     let currentModelName =
-      usage.version === 1 ? "gemini-2.0-flash-lite" : "gemini-1.5-flash";
+      usage.version === 1 ? "gemini-2.0-flash-lite" : "gemini-2.5-flash";
 
     // 2. Handle missing key
     if (!geminiKey) {
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
         );
         fallbackUsed = true;
         const fallbackModelName =
-          usage.version === 1 ? "gemini-1.5-flash" : "gemini-2.0-flash-lite";
+          usage.version === 1 ? "gemini-2.5-flash" : "gemini-2.0-flash-lite";
         const fallbackModel = genAI.getGenerativeModel({
           model: fallbackModelName,
         });
