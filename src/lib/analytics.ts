@@ -1,10 +1,4 @@
-// import { redis } from "@/lib/redis";
-import { Redis } from "@upstash/redis";
-
-const redis = new Redis({
-  url: process.env.NEXT_PUBLIC_UPSTASH_REDIS_REST_URL!,
-  token: process.env.NEXT_PUBLIC_UPSTASH_REDIS_REST_TOKEN!,
-});
+import { redis } from "@/lib/redis";
 
 export interface DailyStats {
   date: string;

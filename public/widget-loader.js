@@ -106,8 +106,16 @@
   /* Analytics Tracking                                  */
   /* -------------------------------------------------- */
   const TRACKING_API = `${baseUrl}/api/analytics/track`;
-  const SESSION_KEY = "helpdeck_session";
-  const SESSION_EXPIRY = 30 * 60 * 1000; // 30 minutes
+  const SESSION_KEY = "helpdeck_session_id";
+
+  // Get or create session ID
+  let sessionId = localStorage.getItem(SESSION_KEY);
+  if (!sessionId) {
+    sessionId =
+      Math.random().toString(36).substring(2, 15) +
+      Math.random().toString(36).substring(2, 15);
+    localStorage.setItem(SESSION_KEY, sessionId);
+  }
 
   // Helper to send data
   const sendEvent = (type, payload = {}) => {
@@ -119,6 +127,7 @@
       ownerId,
       payload: {
         ...payload,
+        sessionId,
         url: window.location.href,
         referrer: document.referrer,
         timestamp: Date.now(),

@@ -1,9 +1,7 @@
-"use client";
-
 import { Redis } from "@upstash/redis";
 
 // Upstash Redis client - REST API based, works in Edge and browser
-const redis = new Redis({
+export const redis = new Redis({
   url: process.env.NEXT_PUBLIC_UPSTASH_REDIS_REST_URL!,
   token: process.env.NEXT_PUBLIC_UPSTASH_REDIS_REST_TOKEN!,
 });
@@ -11,8 +9,8 @@ const redis = new Redis({
 // Cache TTL constants (in seconds)
 export const CACHE_TTL = {
   USER_PROFILE: 60 * 60 * 24, // 24 hours
-  WORKSPACE_META: 60 * 60,    // 1 hour
-  STATS: 60 * 5,              // 5 minutes
+  WORKSPACE_META: 60 * 60, // 1 hour
+  STATS: 60 * 5, // 5 minutes
 } as const;
 
 // Cache key generators
@@ -38,7 +36,7 @@ export async function getFromCache<T>(key: string): Promise<T | null> {
 export async function setInCache<T>(
   key: string,
   value: T,
-  ttlSeconds: number = CACHE_TTL.STATS
+  ttlSeconds: number = CACHE_TTL.STATS,
 ): Promise<boolean> {
   try {
     await redis.set(key, value, { ex: ttlSeconds });
@@ -61,7 +59,9 @@ export async function invalidateCache(key: string): Promise<boolean> {
 }
 
 // Invalidate multiple keys with pattern
-export async function invalidateCachePattern(pattern: string): Promise<boolean> {
+export async function invalidateCachePattern(
+  pattern: string,
+): Promise<boolean> {
   try {
     const keys = await redis.keys(pattern);
     if (keys.length > 0) {
@@ -78,7 +78,7 @@ export async function invalidateCachePattern(pattern: string): Promise<boolean> 
 export async function incrementCacheCounter(
   key: string,
   field: string,
-  amount: number = 1
+  amount: number = 1,
 ): Promise<number> {
   try {
     const result = await redis.hincrby(key, field, amount);
@@ -90,7 +90,9 @@ export async function incrementCacheCounter(
 }
 
 // Get all counters from a hash
-export async function getCacheCounters(key: string): Promise<Record<string, number>> {
+export async function getCacheCounters(
+  key: string,
+): Promise<Record<string, number>> {
   try {
     const data = await redis.hgetall<Record<string, number>>(key);
     return data || {};
@@ -101,7 +103,9 @@ export async function getCacheCounters(key: string): Promise<Record<string, numb
 }
 
 // Reset hash and return old values (for flushing to Firestore)
-export async function flushCacheCounters(key: string): Promise<Record<string, number>> {
+export async function flushCacheCounters(
+  key: string,
+): Promise<Record<string, number>> {
   try {
     const data = await redis.hgetall<Record<string, number>>(key);
     if (data && Object.keys(data).length > 0) {
@@ -113,5 +117,3 @@ export async function flushCacheCounters(key: string): Promise<Record<string, nu
     return {};
   }
 }
-
-export { redis };

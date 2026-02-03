@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { UAParser } from "ua-parser-js";
-import { Redis } from "@upstash/redis";
+import { redis } from "@/lib/redis";
 
-// Instantiate Redis locally to avoid module import issues
-const redis = new Redis({
-  url: process.env.NEXT_PUBLIC_UPSTASH_REDIS_REST_URL!,
-  token: process.env.NEXT_PUBLIC_UPSTASH_REDIS_REST_TOKEN!,
-});
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,7 +20,7 @@ export async function POST(req: NextRequest) {
     if (!websiteId || !type) {
       return NextResponse.json(
         { error: "Missing required fields" },
-        { status: 400 },
+        { status: 400, headers: corsHeaders },
       );
     }
 
@@ -131,7 +135,7 @@ export async function POST(req: NextRequest) {
 
     await pipeline.exec();
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true }, { headers: corsHeaders });
   } catch (error) {
     console.error("Analytics Error:", error);
     return NextResponse.json(
@@ -139,7 +143,7 @@ export async function POST(req: NextRequest) {
         error: "Internal Server Error",
         details: error instanceof Error ? error.message : String(error),
       },
-      { status: 500 },
+      { status: 500, headers: corsHeaders },
     );
   }
 }
