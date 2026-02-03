@@ -122,3 +122,21 @@ export async function getGeoStats(
     .sort((a, b) => b.visitors - a.visitors)
     .slice(0, 10); // Top 10
 }
+
+export async function getLiveVisitors(websiteId: string): Promise<number> {
+  const timestamp = Date.now();
+  // Live = visited in last 30 minutes
+  const thirtyMinsAgo = timestamp - 30 * 60 * 1000;
+
+  try {
+    const count = await redis.zcount(
+      `analytics:${websiteId}:live`,
+      thirtyMinsAgo,
+      "+inf",
+    );
+    return count || 0;
+  } catch (error) {
+    console.error("Error fetching live visitors:", error);
+    return 0;
+  }
+}

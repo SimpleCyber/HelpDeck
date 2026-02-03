@@ -105,40 +105,147 @@
   /* -------------------------------------------------- */
   /* Analytics Tracking                                  */
   /* -------------------------------------------------- */
+  /* -------------------------------------------------- */
+  /* Analytics Tracking                                  */
+  /* -------------------------------------------------- */
   const TRACKING_API = `${baseUrl}/api/analytics/track`;
-  const SESSION_KEY = "helpdeck_session_id";
 
-  // Get or create session ID
-  let sessionId = localStorage.getItem(SESSION_KEY);
-  if (!sessionId) {
-    sessionId =
-      Math.random().toString(36).substring(2, 15) +
-      Math.random().toString(36).substring(2, 15);
-    localStorage.setItem(SESSION_KEY, sessionId);
+  // Debug mode: enable if localhost or properly flagged
+  const DEBUG =
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1" ||
+    window.HELPDECK_DEBUG === true;
+
+  const log = (msg, ...args) => {
+    if (DEBUG) {
+      console.log(
+        `%c[HelpDeck] ${msg}`,
+        "color: #3b82f6; font-weight: bold;",
+        ...args,
+      );
+    }
+  };
+
+  // --- 1. Bot Detection ---
+  const isBot = () => {
+    const nav = window.navigator;
+    if (!nav) return true;
+    const ua = nav.userAgent.toLowerCase();
+
+    // Check known bot strings
+    if (
+      ua.includes("headless") ||
+      ua.includes("bot") ||
+      ua.includes("crawl") ||
+      ua.includes("spider") ||
+      ua.includes("webdriver") ||
+      ua.includes("lighthouse")
+    ) {
+      return true;
+    }
+
+    // Check webdriver properties
+    if (
+      ("webdriver" in nav && nav.webdriver) ||
+      window.callPhantom ||
+      window._phantom ||
+      window.__nightmare
+    ) {
+      return true;
+    }
+
+    return false;
+  };
+
+  if (isBot()) {
+    log("Bot detected, tracking disabled");
+    document.body.appendChild(iframe);
+    return;
   }
 
-  // Helper to send data
+  // --- 2. Cookie Helpers (Better than localStorage) ---
+  const setCookie = (name, value, days) => {
+    let expires = "";
+    if (days) {
+      const date = new Date();
+      date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
+      expires = "; expires=" + date.toUTCString();
+    }
+    // Secure cookie attributes
+    document.cookie =
+      name + "=" + (value || "") + expires + "; path=/; SameSite=Lax";
+  };
+
+  const getCookie = (name) => {
+    const nameEQ = name + "=";
+    const ca = document.cookie.split(";");
+    for (let i = 0; i < ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) === " ") c = c.substring(1, c.length);
+      if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+    }
+    return null;
+  };
+
+  // --- 3. Identity (Visitors & Sessions) ---
+  const VISITOR_KEY = "hd_vid";
+  const SESSION_KEY = "hd_sid";
+
+  // Visitor ID (1 year)
+  let visitorId = getCookie(VISITOR_KEY);
+  if (!visitorId) {
+    visitorId =
+      "v." +
+      Math.random().toString(36).substring(2, 10) +
+      "." +
+      Date.now().toString(36);
+    setCookie(VISITOR_KEY, visitorId, 365);
+  }
+
+  // Session ID (30 mins)
+  let sessionId = getCookie(SESSION_KEY);
+  if (!sessionId) {
+    sessionId =
+      "s." +
+      Math.random().toString(36).substring(2, 10) +
+      "." +
+      Date.now().toString(36);
+    setCookie(SESSION_KEY, sessionId, 0.0208); // ~30 mins
+  } else {
+    setCookie(SESSION_KEY, sessionId, 0.0208); // Refresh expiry
+  }
+
+  // --- 4. Transport ---
   const sendEvent = (type, payload = {}) => {
-    if (!websiteId) return;
+    // If no websiteId, only log in debug mode
+    if (!websiteId) {
+      if (DEBUG) log("Skipping send: No websiteId", { type, payload });
+      return;
+    }
 
     const data = {
       type,
       websiteId,
-      ownerId,
+      ownerId, // Include ownerId context if available
       payload: {
         ...payload,
         sessionId,
+        visitorId,
         url: window.location.href,
+        path: window.location.pathname,
         referrer: document.referrer,
         timestamp: Date.now(),
+        // Add technical context
+        ua: navigator.userAgent,
+        screen: `${window.screen.width}x${window.screen.height}`,
+        lang: navigator.language,
       },
     };
 
-    // Use sendBeacon for reliability during unload, fallback to fetch
+    log(`Sending ${type}`, data);
+
+    const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
     if (navigator.sendBeacon) {
-      const blob = new Blob([JSON.stringify(data)], {
-        type: "application/json",
-      });
       navigator.sendBeacon(TRACKING_API, blob);
     } else {
       fetch(TRACKING_API, {
@@ -146,69 +253,97 @@
         body: JSON.stringify(data),
         headers: { "Content-Type": "application/json" },
         keepalive: true,
-      }).catch(() => {});
+      }).catch((err) => log("Send failed", err));
     }
   };
 
-  // 1. Track Page View
-  sendEvent("pageview");
+  // --- 5. Tracking Logic (SPA Support) ---
+  let lastPath = window.location.pathname;
+  let lastEventTime = 0;
 
-  // 2. Track Session Duration
-  let sessionStart = Date.now();
-  let lastActivity = Date.now();
+  const trackPageview = () => {
+    const now = Date.now();
+    // Simple debounce/throttle for rapid firing (e.g. React double mount)
+    // Only block if same path within 500ms
+    if (now - lastEventTime < 500 && window.location.pathname === lastPath) {
+      return;
+    }
 
-  const updateActivity = () => {
-    lastActivity = Date.now();
+    lastPath = window.location.pathname;
+    lastEventTime = now;
+    sendEvent("pageview");
   };
 
-  ["click", "scroll", "keypress"].forEach((evt) =>
-    window.addEventListener(evt, updateActivity, { passive: true }),
-  );
+  // Hook validation: Ensure we don't break the site if something changes
+  try {
+    // 1. Initial Load
+    trackPageview();
 
-  // Send session end on unload
-  window.addEventListener("visibilitychange", () => {
+    // 2. History API (Next.js / React Router support)
+    const originalPushState = history.pushState;
+    history.pushState = function (...args) {
+      originalPushState.apply(this, args);
+      requestAnimationFrame(trackPageview); // Wait for microtask/update
+    };
+
+    const originalReplaceState = history.replaceState;
+    history.replaceState = function (...args) {
+      // replaceState typically doesn't trigger new pageview, but some might want it.
+      // For now, logging it as internal calc or ignoring.
+      originalReplaceState.apply(this, args);
+      // Usually we don't track replaceState as pageview unless URL path changes significantly
+      if (window.location.pathname !== lastPath) {
+        requestAnimationFrame(trackPageview);
+      }
+    };
+
+    // 3. Popstate (Back/Forward buttons)
+    window.addEventListener("popstate", () =>
+      requestAnimationFrame(trackPageview),
+    );
+  } catch (err) {
+    log("SPA tracking setup failed", err);
+  }
+
+  // --- 6. Session & Vitals ---
+  let sessionStartTime = Date.now();
+
+  // Track session duration on visibility toggle (tab switch/close)
+  document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") {
-      const duration = Date.now() - sessionStart;
+      const duration = Date.now() - sessionStartTime;
       sendEvent("session_end", { duration });
     } else {
-      // Reset if coming back? Maybe new session logic needed but simple for now
-      sessionStart = Date.now();
+      sessionStartTime = Date.now();
     }
   });
 
-  // 3. Performance Metrics (Core Web Vitals approximation)
-  // Simple LCP and FCP using PerformanceObserver
+  // Track basic vitals if supported
   if ("PerformanceObserver" in window) {
     try {
-      // FCP
-      new PerformanceObserver((entryList) => {
-        for (const entry of entryList.getEntriesByName(
-          "first-contentful-paint",
-        )) {
-          sendEvent("vitals", {
-            metric: "FCP",
-            value: entry.startTime,
-            rating: entry.startTime < 1800 ? "good" : "poor",
-          });
-        }
-      }).observe({ type: "paint", buffered: true });
-
-      // LCP
-      new PerformanceObserver((entryList) => {
-        const entries = entryList.getEntries();
-        const lastEntry = entries[entries.length - 1];
-        if (lastEntry) {
-          sendEvent("vitals", {
-            metric: "LCP",
-            value: lastEntry.startTime,
-            rating: lastEntry.startTime < 2500 ? "good" : "poor",
-          });
-        }
-      }).observe({ type: "largest-contentful-paint", buffered: true });
+      const observer = new PerformanceObserver((list) => {
+        list.getEntries().forEach((entry) => {
+          if (entry.entryType === "largest-contentful-paint") {
+            sendEvent("vitals", {
+              metric: "LCP",
+              value: Math.round(entry.startTime),
+            });
+          }
+          if (entry.name === "first-contentful-paint") {
+            sendEvent("vitals", {
+              metric: "FCP",
+              value: Math.round(entry.startTime),
+            });
+          }
+        });
+      });
+      observer.observe({ type: "paint", buffered: true });
+      observer.observe({ type: "largest-contentful-paint", buffered: true });
     } catch (e) {
-      // Ignore if not supported
+      // Vitals not supported
     }
   }
 
+  // Finalize
   document.body.appendChild(iframe);
 })();

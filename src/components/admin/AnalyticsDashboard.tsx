@@ -24,6 +24,7 @@ import {
   Smartphone,
   Monitor,
   Tablet,
+  AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -63,7 +64,7 @@ export function AnalyticsDashboard({ workspaceId }: AnalyticsDashboardProps) {
 
   if (!data) return null;
 
-  const { daily, devices, geo } = data;
+  const { daily, devices, geo, live } = data;
 
   // Calculate totals
   const totalVisitors = daily.reduce(
@@ -92,7 +93,46 @@ export function AnalyticsDashboard({ workspaceId }: AnalyticsDashboardProps) {
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {totalVisitors === 0 && !loading && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 flex flex-col md:flex-row items-center gap-4 text-amber-900">
+          <div className="bg-amber-100 p-3 rounded-xl">
+            <AlertTriangle className="text-amber-600" size={24} />
+          </div>
+          <div className="flex-1">
+            <h4 className="font-bold text-lg">No Analytics Data Yet</h4>
+            <p className="text-sm text-amber-800/80">
+              We haven't received any data for this workspace. Ensure the widget
+              is embedded on your website and visitors are accessing it.
+            </p>
+          </div>
+        </div>
+      )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Live Users Card */}
+        <div className="bg-[var(--bg-card)] p-6 rounded-3xl border border-[var(--border-color)] shadow-sm relative overflow-hidden group">
+          <div className="absolute -right-6 -top-6 bg-green-500/10 w-24 h-24 rounded-full group-hover:bg-green-500/20 transition-all" />
+          <div className="flex items-center gap-4 mb-2">
+            <div className="bg-green-50 text-green-600 p-3 rounded-xl relative">
+              <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+              </span>
+              <Users size={24} />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-[var(--text-muted)]">
+                Live Now
+              </p>
+              <h3 className="text-2xl font-black text-[var(--text-main)]">
+                {live || 0}
+              </h3>
+            </div>
+          </div>
+          <div className="h-1 w-full bg-green-100 rounded-full overflow-hidden mt-4">
+            <div className="h-full bg-green-500 animate-pulse w-full" />
+          </div>
+        </div>
+
         {/* Total Visitors Card */}
         <div className="bg-[var(--bg-card)] p-6 rounded-3xl border border-[var(--border-color)] shadow-sm">
           <div className="flex items-center gap-4 mb-4">
@@ -278,22 +318,45 @@ export function AnalyticsDashboard({ workspaceId }: AnalyticsDashboardProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-4">
             {geo && geo.length > 0 ? (
-              geo.map((g: any, i: number) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between p-3 rounded-xl hover:bg-[var(--bg-main)] transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <Globe size={16} className="text-blue-500" />
-                    <span className="font-bold text-[var(--text-main)]">
-                      {g.country === "Unknown" ? "Unknown Region" : g.country}
+              geo.map((g: any, i: number) => {
+                const countryName =
+                  g.country === "Unknown"
+                    ? "Unknown Region"
+                    : new Intl.DisplayNames(["en"], { type: "region" }).of(
+                        g.country,
+                      ) || g.country;
+
+                return (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between p-3 rounded-xl hover:bg-[var(--bg-main)] transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      {g.country === "Unknown" ? (
+                        <Globe size={16} className="text-blue-500" />
+                      ) : (
+                        <img
+                          src={`https://flagcdn.com/w40/${g.country.toLowerCase()}.png`}
+                          srcSet={`https://flagcdn.com/w80/${g.country.toLowerCase()}.png 2x`}
+                          width={24}
+                          height={16}
+                          alt={countryName}
+                          className="w-6 h-4 object-cover rounded shadow-sm border border-black/5"
+                        />
+                      )}
+                      <span
+                        className="font-bold text-[var(--text-main)] truncate max-w-[140px]"
+                        title={countryName}
+                      >
+                        {countryName}
+                      </span>
+                    </div>
+                    <span className="font-mono text-sm font-bold text-[var(--text-muted)]">
+                      {g.visitors}
                     </span>
                   </div>
-                  <span className="font-mono text-sm font-bold text-[var(--text-muted)]">
-                    {g.visitors}
-                  </span>
-                </div>
-              ))
+                );
+              })
             ) : (
               <div className="text-[var(--text-muted)] italic">
                 No geographical data available yet.
