@@ -8,10 +8,30 @@
     return;
   }
 
-  const scriptTag = document.currentScript;
-  const baseUrl = scriptTag
-    ? new URL(scriptTag.src).origin
-    : window.location.origin;
+  const getBaseUrl = () => {
+    // 1. Try currentScript (works for synchronous)
+    if (document.currentScript && document.currentScript.src) {
+      return new URL(document.currentScript.src).origin;
+    }
+    // 2. Search for the script tag (works for async/injected)
+    const scripts = document.getElementsByTagName("script");
+    for (let i = 0; i < scripts.length; i++) {
+      const src = scripts[i].src;
+      if (
+        src &&
+        (src.includes("/widget-loader.js") || src.includes("widget-loader.js"))
+      ) {
+        return new URL(src).origin;
+      }
+    }
+    // 3. Fallback to production if somehow not found (or window origin for self-hosted?)
+    // Better to use window.location.origin only if we are ON the app itself, but strictly we want the CDN url.
+    // Let's default to the detected script origin or fallback to specific logic if needed.
+    // For now, let's assume if we can't find it, we might be in trouble, but the loop above is robust.
+    return window.location.origin;
+  };
+
+  const baseUrl = getBaseUrl();
 
   let queryParams = `v=1`;
   if (ownerId) {
