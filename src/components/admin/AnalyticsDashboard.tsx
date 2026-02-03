@@ -36,22 +36,30 @@ export function AnalyticsDashboard({ workspaceId }: AnalyticsDashboardProps) {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch(`/api/analytics/${workspaceId}`);
-        const json = await res.json();
-        setData(json);
-      } catch (error) {
-        console.error("Failed to fetch analytics", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (workspaceId) {
-      fetchData();
+  // Fetch data function
+  const fetchData = async (isPolling = false) => {
+    if (!workspaceId) return;
+    try {
+      const res = await fetch(`/api/analytics/${workspaceId}`);
+      const json = await res.json();
+      setData(json);
+    } catch (error) {
+      console.error("Failed to fetch analytics", error);
+    } finally {
+      if (!isPolling) setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    // Initial fetch
+    fetchData();
+
+    // Poll every 5 seconds for live data
+    const interval = setInterval(() => {
+      fetchData(true);
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, [workspaceId]);
 
   if (loading) {
