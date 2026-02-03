@@ -333,7 +333,7 @@ function AdminChatContent() {
     );
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !selected) return;
 
@@ -345,18 +345,41 @@ function AdminChatContent() {
     }
 
     setUploading(true);
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      try {
-        const compressed = await compressImage(reader.result as string);
-        await send(undefined, compressed);
-      } catch (err) {
-        console.error("Error compressing image:", err);
-      } finally {
-        setUploading(false);
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      // 1. Read and compress
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const compressedBase64 = await compressImage(base64, 1200, 1200, 0.7);
+
+      // 2. To Blob
+      const response = await fetch(compressedBase64);
+      const blob = await response.blob();
+
+      const formData = new FormData();
+      formData.append("file", blob, "image.jpg");
+      formData.append("folder", "admin-uploads");
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Upload failed");
+
+      const data = await res.json();
+      await send(undefined, data.secure_url);
+    } catch (err) {
+      console.error("Error uploading image to Cloudinary:", err);
+      alert("Failed to upload image.");
+    } finally {
+      setUploading(false);
+      // Reset input
+      e.target.value = "";
+    }
   };
 
   return (

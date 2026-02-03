@@ -44,7 +44,8 @@ export function MessageBubble({
           boxShadow: isAdmin ? `0 8px 24px -8px ${color}66` : undefined,
         }}
       >
-        {message.text.startsWith("data:image") ? (
+        {message.text.startsWith("data:image") ||
+        message.text.includes("res.cloudinary.com") ? (
           <img
             src={message.text}
             alt="Attached image"

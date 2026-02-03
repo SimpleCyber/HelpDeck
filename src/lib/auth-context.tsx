@@ -1,23 +1,23 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { 
-  onAuthStateChanged, 
-  User, 
+import React, { createContext, useContext, useEffect, useState } from "react";
+import {
+  onAuthStateChanged,
+  User,
   signInWithPopup,
-  GoogleAuthProvider, 
+  GoogleAuthProvider,
   signOut,
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword
-} from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { auth, db } from './firebase';
-import { 
-  createOrUpdateUser, 
-  compressGooglePhoto, 
+  createUserWithEmailAndPassword,
+} from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "./firebase";
+import {
+  createOrUpdateUser,
+  compressGooglePhoto,
   getUserProfile,
-  UserProfile 
-} from './db-helpers';
+  UserProfile,
+} from "./db-helpers";
 
 interface AuthContextType {
   user: User | null;
@@ -46,16 +46,39 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (!userDoc.exists()) {
         // New user - create document with subscription
-        let photoBase64 = "";
+        let photoUrl = "";
         if (firebaseUser.photoURL) {
-          photoBase64 = await compressGooglePhoto(firebaseUser.photoURL);
+          try {
+            const formData = new FormData();
+            formData.append("url", firebaseUser.photoURL);
+            formData.append("folder", "profiles");
+
+            const res = await fetch("/api/upload", {
+              method: "POST",
+              body: formData,
+            });
+
+            if (res.ok) {
+              const data = await res.json();
+              photoUrl = data.secure_url;
+            }
+          } catch (err) {
+            console.error("Error uploading profile photo to Cloudinary:", err);
+          }
         }
 
-        await createOrUpdateUser(firebaseUser.uid, {
-          name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || "User",
-          email: firebaseUser.email || "",
-          photoBase64,
-        }, true);
+        await createOrUpdateUser(
+          firebaseUser.uid,
+          {
+            name:
+              firebaseUser.displayName ||
+              firebaseUser.email?.split("@")[0] ||
+              "User",
+            email: firebaseUser.email || "",
+            photoBase64: photoUrl, // Keeping field name for compatibility
+          },
+          true,
+        );
 
         console.log("Created new user document with trial subscription");
       } else {
@@ -66,7 +89,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Fetch and cache user profile
       const profile = await getUserProfile(firebaseUser.uid);
       setUserProfile(profile);
-
     } catch (error) {
       console.error("Error syncing user document:", error);
     }
@@ -75,13 +97,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
-      
+
       if (firebaseUser) {
         await syncUserDocument(firebaseUser);
       } else {
         setUserProfile(null);
       }
-      
+
       setLoading(false);
     });
 
@@ -132,16 +154,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      userProfile, 
-      loading, 
-      signInWithGoogle, 
-      signInWithEmail, 
-      signUpWithEmail, 
-      logout,
-      refreshUserProfile 
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        userProfile,
+        loading,
+        signInWithGoogle,
+        signInWithEmail,
+        signUpWithEmail,
+        logout,
+        refreshUserProfile,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -150,7 +174,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };

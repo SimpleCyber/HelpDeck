@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { Smile, Paperclip, Mic, Send, Zap } from "lucide-react";
 import { MessageBubble } from "@/components/common/MessageBubble";
 import { EmojiPicker } from "./EmojiPicker";
-import { cn } from "@/lib/utils";
 import { compressImage } from "@/lib/image-utils";
+import { cn } from "@/lib/utils";
 
 export function WidgetChat({
   messages,
@@ -28,6 +28,7 @@ export function WidgetChat({
 }) {
   const [text, setText] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -56,22 +57,48 @@ export function WidgetChat({
     }
   };
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      // 1. Read file as Base64 for compression
       const reader = new FileReader();
-      reader.onload = async (ev) => {
-        if (ev.target?.result) {
-          try {
-            const compressed = await compressImage(ev.target.result as string);
-            onSend(compressed);
-          } catch (err) {
-            console.error("Error compressing widget image:", err);
-            onSend(ev.target.result as string);
-          }
-        }
-      };
-      reader.readAsDataURL(file);
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      // 2. Compress image (max 1200px, 0.7 quality)
+      const compressedBase64 = await compressImage(base64, 1200, 1200, 0.7);
+
+      // 3. Convert compressed Base64 to Blob for upload
+      const response = await fetch(compressedBase64);
+      const blob = await response.blob();
+
+      // 4. Upload to Cloudinary via our API
+      const formData = new FormData();
+      formData.append("file", blob, "image.jpg");
+      formData.append("folder", "widget-uploads");
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Upload failed");
+
+      const data = await res.json();
+      onSend(data.secure_url);
+    } catch (err) {
+      console.error("Error uploading to Cloudinary:", err);
+      // Removed Base64 fallback to prevent database pollution
+      alert("Failed to upload image. Please try again.");
+    } finally {
+      setIsUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
     }
   };
 

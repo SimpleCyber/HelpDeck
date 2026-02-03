@@ -344,7 +344,9 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
                   );
 
                   // Update counts and status
-                  const isImage = text.startsWith("data:image");
+                  const isImage =
+                    text.startsWith("data:image") ||
+                    text.includes("res.cloudinary.com");
                   const displayMessage = isImage ? "📷 Image" : text;
 
                   const updates: any = {
