@@ -3,8 +3,20 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { HelpDeckLogo } from "@/components/common/HelpDeckLogo";
+import { useAuth } from "@/lib/auth-context";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export function Navbar() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.push("/admin/dashboard");
+    }
+  }, [loading, user, router]);
+
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-gray-200/50 bg-white/80 backdrop-blur-xl transition-all supports-[backdrop-filter]:bg-white/60">
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
