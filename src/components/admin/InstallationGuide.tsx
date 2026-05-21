@@ -236,6 +236,110 @@ export default function HelpDeckWidget() {
             </Button>
           </div>
         </section>
+
+        <section className="space-y-6 pt-6 border-t border-[var(--border-color)]">
+          <div className="flex items-center justify-between">
+            <h3 className="font-black text-xl text-[var(--text-main)] tracking-tight">
+              Advanced Customization
+            </h3>
+            <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest bg-blue-50 dark:bg-blue-900/20 px-3 py-1 rounded-full border border-blue-100 dark:border-blue-800/50">
+              New Features
+            </span>
+          </div>
+          <p className="text-[var(--text-muted)] text-sm font-medium">
+            Take full control of the widget's behavior and appearance.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="p-6 bg-[var(--bg-main)] rounded-3xl border border-[var(--border-color)] space-y-3">
+              <h4 className="font-bold text-[var(--text-main)] flex items-center gap-2">
+                <span className="w-6 h-6 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-xs">
+                  1
+                </span>
+                Custom Button Attachment
+              </h4>
+              <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+                Connect the widget to your own UI elements. Provide a CSS
+                selector (like <code>#my-chat-btn</code>) and we'll automatically
+                bind the toggle action.
+              </p>
+            </div>
+
+            <div className="p-6 bg-[var(--bg-main)] rounded-3xl border border-[var(--border-color)] space-y-3">
+              <h4 className="font-bold text-[var(--text-main)] flex items-center gap-2">
+                <span className="w-6 h-6 rounded-lg bg-green-100 text-green-600 flex items-center justify-center text-xs">
+                  2
+                </span>
+                Custom Initial Position
+              </h4>
+              <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+                Set where the widget should first appear. You can specify{" "}
+                <code>bottom</code>, <code>right</code>, <code>top</code>, or{" "}
+                <code>left</code> offsets.
+              </p>
+            </div>
+
+            <div className="p-6 bg-[var(--bg-main)] rounded-3xl border border-[var(--border-color)] space-y-3 md:col-span-2">
+              <h4 className="font-bold text-[var(--text-main)] flex items-center gap-2">
+                <span className="w-6 h-6 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center text-xs">
+                  3
+                </span>
+                Hidden Launcher Mode
+              </h4>
+              <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+                Want to hide the default bubble icon? Enable{" "}
+                <code>hideLauncher</code> to make the bubble invisible. The
+                widget will only appear when triggered by your custom button or
+                programmatic API.
+              </p>
+            </div>
+          </div>
+
+          <div className="relative group p-8 bg-slate-900 rounded-[32px] border border-slate-800 shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                Implementation Example
+              </span>
+            </div>
+            <pre className="text-slate-300 overflow-x-auto font-mono text-[11px] leading-relaxed">
+              {`window.HELPDECK_SETTINGS = {
+  buttonSelector: "#chat-with-us", // Attach to your button
+  hideLauncher: true,             // Hide the default bubble
+  draggable: true,                // Allow users to drag the widget
+  position: { 
+    bottom: "24px", 
+    right: "24px" 
+  }
+};`}
+            </pre>
+            <Button
+              variant="secondary"
+              icon={copied === "advanced" ? Check : Copy}
+              onClick={() =>
+                copy(
+                  `window.HELPDECK_SETTINGS = {
+  buttonSelector: "#chat-with-us",
+  hideLauncher: true,
+  draggable: true,
+  position: { 
+    bottom: "24px", 
+    right: "24px" 
+  }
+};`,
+                  "advanced",
+                )
+              }
+              className={cn(
+                "absolute top-6 right-6 transition-all",
+                copied === "advanced"
+                  ? "bg-green-600 text-white border-none"
+                  : "bg-slate-800/80 text-slate-300 border-none backdrop-blur-sm hover:bg-slate-700",
+              )}
+            >
+              Copy Settings
+            </Button>
+          </div>
+        </section>
       </div>
     </div>
   );
