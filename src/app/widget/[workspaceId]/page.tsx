@@ -215,6 +215,24 @@ function WidgetContent({ workspaceId }: { workspaceId: string }) {
     }
   };
 
+  /* -------------------------------------------------- */
+  /* Listen for parent control                          */
+  /* -------------------------------------------------- */
+  useEffect(() => {
+    const handleParentMessage = (event: MessageEvent) => {
+      if (event.data === "helpdeck:open") {
+        if (!isOpen) toggle();
+      } else if (event.data === "helpdeck:close") {
+        if (isOpen) toggle();
+      } else if (event.data === "helpdeck:toggle") {
+        toggle();
+      }
+    };
+
+    window.addEventListener("message", handleParentMessage);
+    return () => window.removeEventListener("message", handleParentMessage);
+  }, [isOpen, toggle]);
+
   const onStart = async (
     userName: string,
     userEmail: string,

@@ -32,6 +32,9 @@
   };
 
   const baseUrl = getBaseUrl();
+  const settings = window.HELPDECK_SETTINGS || {};
+  const isDraggable = settings.draggable !== false;
+  const hideLauncher = settings.hideLauncher === true;
 
   let queryParams = `v=1`;
   if (ownerId) {
@@ -51,18 +54,45 @@
   iframe.src = `${baseUrl}/widget/${websiteId}?${queryParams}`;
 
   /* -------------------------------------------------- */
+  /* Persistence & Position                              */
+  /* -------------------------------------------------- */
+  const POS_KEY = `helpdeck_pos_${websiteId}`;
+  const getSavedPos = () => {
+    try {
+      const saved = localStorage.getItem(POS_KEY);
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const savedPos = getSavedPos();
+  const defaultPos = settings.position || { bottom: "8px", right: "8px" };
+  let currentPos = savedPos || defaultPos;
+
+  /* -------------------------------------------------- */
   /* Base iframe styles (shared)                         */
   /* -------------------------------------------------- */
   Object.assign(iframe.style, {
     position: "fixed",
-    bottom: "8px",
-    right: "8px",
     background: "transparent",
     border: "none",
     zIndex: "2147483647",
     transition:
-      "width 0.3s cubic-bezier(0.4,0,0.2,1), height 0.3s cubic-bezier(0.4,0,0.2,1), border-radius 0.3s ease",
+      "width 0.3s cubic-bezier(0.4,0,0.2,1), height 0.3s cubic-bezier(0.4,0,0.2,1), border-radius 0.3s ease, opacity 0.3s ease",
   });
+
+  const applyPosition = (pos) => {
+    iframe.style.top = "auto";
+    iframe.style.bottom = "auto";
+    iframe.style.left = "auto";
+    iframe.style.right = "auto";
+
+    Object.keys(pos).forEach((key) => {
+      iframe.style[key] = pos[key];
+    });
+  };
+  applyPosition(currentPos);
 
   iframe.setAttribute("allowtransparency", "true");
 
@@ -74,10 +104,17 @@
     iframe.style.width = "60px";
     iframe.style.height = "60px";
     iframe.style.borderRadius = "9999px";
-
-    // 🔴 THIS IS THE KEY LINE
     iframe.style.overflow = "hidden";
     iframe.style.pointerEvents = "auto";
+
+    if (hideLauncher) {
+      iframe.style.opacity = "0";
+      iframe.style.pointerEvents = "none";
+    } else {
+      iframe.style.opacity = "1";
+    }
+
+    applyPosition(currentPos);
   };
 
   const updatePanelStyle = () => {
@@ -87,29 +124,123 @@
         iframe.style.height = "100vh";
         iframe.style.bottom = "0px";
         iframe.style.right = "0px";
+        iframe.style.top = "auto";
+        iframe.style.left = "auto";
         iframe.style.borderRadius = "0px";
       } else {
         iframe.style.width = "380px";
         iframe.style.height = "640px";
-        iframe.style.bottom = "8px";
-        iframe.style.right = "8px";
         iframe.style.borderRadius = "16px";
+        applyPosition(currentPos);
       }
+      iframe.style.opacity = "1";
+      iframe.style.pointerEvents = "auto";
     }
   };
 
   const applyPanel = () => {
     iframe.dataset.state = "panel";
     updatePanelStyle();
-
-    // Allow normal layout when expanded
     iframe.style.overflow = "visible";
   };
 
   window.addEventListener("resize", updatePanelStyle);
 
-  // Initial state
   applyBubble();
+
+  /* -------------------------------------------------- */
+  /* Public API ($HelpDeck)                             */
+  /* -------------------------------------------------- */
+  window.$HelpDeck = {
+    open: () => {
+      iframe.contentWindow.postMessage("helpdeck:open", "*");
+    },
+    close: () => {
+      iframe.contentWindow.postMessage("helpdeck:close", "*");
+    },
+    toggle: () => {
+      iframe.contentWindow.postMessage("helpdeck:toggle", "*");
+    },
+    updateSettings: (newSettings) => {
+      Object.assign(settings, newSettings);
+      if (newSettings.hideLauncher !== undefined) {
+        if (iframe.dataset.state === "bubble") applyBubble();
+      }
+    },
+  };
+
+  /* -------------------------------------------------- */
+  /* Custom Button Listeners                             */
+  /* -------------------------------------------------- */
+  const initCustomButtons = () => {
+    if (settings.buttonSelector) {
+      const btns = document.querySelectorAll(settings.buttonSelector);
+      btns.forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.preventDefault();
+          window.$HelpDeck.toggle();
+        });
+      });
+    }
+  };
+
+  initCustomButtons();
+  window.addEventListener("DOMContentLoaded", initCustomButtons);
+
+  /* -------------------------------------------------- */
+  /* Drag and Drop                                      */
+  /* -------------------------------------------------- */
+  let isDragging = false;
+  let startX, startY, startBottom, startRight;
+
+  document.addEventListener("mousedown", (e) => {
+    if (!isDraggable || iframe.dataset.state !== "bubble" || hideLauncher)
+      return;
+
+    const rect = iframe.getBoundingClientRect();
+    if (
+      e.clientX >= rect.left &&
+      e.clientX <= rect.right &&
+      e.clientY >= rect.top &&
+      e.clientY <= rect.bottom
+    ) {
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+
+      const style = window.getComputedStyle(iframe);
+      startBottom = parseInt(style.bottom) || 0;
+      startRight = parseInt(style.right) || 0;
+
+      iframe.style.transition = "none";
+      e.preventDefault();
+    }
+  });
+
+  document.addEventListener("mousemove", (e) => {
+    if (!isDragging) return;
+
+    const deltaX = startX - e.clientX;
+    const deltaY = startY - e.clientY;
+
+    const newBottom = startBottom + deltaY;
+    const newRight = startRight + deltaX;
+
+    const b = Math.max(0, Math.min(window.innerHeight - 60, newBottom));
+    const r = Math.max(0, Math.min(window.innerWidth - 60, newRight));
+
+    currentPos = { bottom: b + "px", right: r + "px" };
+    applyPosition(currentPos);
+  });
+
+  document.addEventListener("mouseup", () => {
+    if (isDragging) {
+      isDragging = false;
+      iframe.style.transition = "";
+      localStorage.setItem(POS_KEY, JSON.stringify(currentPos));
+    }
+  });
+
 
   /* -------------------------------------------------- */
   /* Listen for widget messages                          */
