@@ -47,10 +47,14 @@ function InstallationPageContent() {
           <div className="max-w-4xl mx-auto space-y-8">
             <div>
               <h1 className="text-3xl font-black text-[var(--text-main)] mb-2">Installation</h1>
-              <p className="text-[var(--text-muted)]">Get the code to add the widget to your website.</p>
+              <p className="text-[var(--text-muted)]">Get the code to add the widget or live inbox to your website.</p>
             </div>
             
-            <InstallationGuide workspaceId={workspaceId} ownerId={ownerId} />
+            <InstallationGuide
+              workspaceId={workspaceId}
+              ownerId={ownerId}
+              defaultColor={ws?.settings?.color}
+            />
           </div>
         </main>
       )}
