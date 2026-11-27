@@ -395,17 +395,13 @@
 
     log(`Sending ${type}`, data);
 
-    const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
-    if (navigator.sendBeacon) {
-      navigator.sendBeacon(TRACKING_API, blob);
-    } else {
-      fetch(TRACKING_API, {
-        method: "POST",
-        body: JSON.stringify(data),
-        headers: { "Content-Type": "application/json" },
-        keepalive: true,
-      }).catch((err) => log("Send failed", err));
-    }
+    fetch(TRACKING_API, {
+      method: "POST",
+      body: JSON.stringify(data),
+      headers: { "Content-Type": "application/json" },
+      credentials: "omit",
+      keepalive: true,
+    }).catch((err) => log("Send failed", err));
   };
 
   // --- 5. Tracking Logic (SPA Support) ---

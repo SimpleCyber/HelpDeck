@@ -2,17 +2,30 @@ import { NextRequest, NextResponse } from "next/server";
 import { UAParser } from "ua-parser-js";
 import { redis } from "@/lib/redis";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-};
+function getCorsHeaders(req: NextRequest): Record<string, string> {
+  const origin = req.headers.get("origin");
+  if (origin) {
+    return {
+      "Access-Control-Allow-Origin": origin,
+      "Access-Control-Allow-Credentials": "true",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+      Vary: "Origin",
+    };
+  }
+  return {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+  };
+}
 
-export async function OPTIONS() {
-  return NextResponse.json({}, { headers: corsHeaders });
+export async function OPTIONS(req: NextRequest) {
+  return NextResponse.json({}, { headers: getCorsHeaders(req) });
 }
 
 export async function POST(req: NextRequest) {
+  const corsHeaders = getCorsHeaders(req);
   try {
     const body = await req.json();
     const { type, websiteId, payload } = body;
